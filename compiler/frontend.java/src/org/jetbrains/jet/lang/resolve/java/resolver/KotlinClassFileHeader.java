@@ -23,18 +23,6 @@ import java.util.List;
 import static org.jetbrains.asm4.ClassReader.*;
 
 public final class KotlinClassFileHeader {
-    @Nullable
-    public static ClassData readClassData(@NotNull VirtualFile virtualFile) {
-        String[] data = readKotlinHeaderFromClassFile(virtualFile).getAnnotationData();
-        return data != null ? JavaProtoBufUtil.readClassDataFrom(data) : null;
-    }
-
-    @Nullable
-    public static PackageData readPackageData(@NotNull VirtualFile virtualFile) {
-        String[] data = readKotlinHeaderFromClassFile(virtualFile).getAnnotationData();
-        return data != null ? JavaProtoBufUtil.readPackageDataFrom(data) : null;
-    }
-
     @NotNull
     public static KotlinClassFileHeader readKotlinHeaderFromClassFile(@NotNull VirtualFile virtualFile) {
         try {
@@ -71,26 +59,62 @@ public final class KotlinClassFileHeader {
 
     @Nullable
     private String[] annotationData = null;
-
     @NotNull
     HeaderType type = HeaderType.NONE;
+    @Nullable
+    JvmClassName jvmClassName = null;
 
     public int getVersion() {
         return version;
     }
 
-    @Nullable
+    @NotNull
+    public HeaderType getType() {
+        return type;
+    }
+
+    @SuppressWarnings({"ConstantConditions", "NullableProblems"})
+    @NotNull
+    public JvmClassName getJvmClassName() {
+        return jvmClassName;
+    }
+
     public String[] getAnnotationData() {
+        assertDataRead();
+        return annotationData;
+    }
+
+    private void assertDataRead() {
         if (annotationData == null && type != HeaderType.NONE) {
             throw new IllegalStateException("Data for annotations " + type.correspondingAnnotation + " was not read.");
         }
-        return annotationData;
+    }
+
+    @Nullable
+    public ClassData readClassData() {
+        if (type != HeaderType.CLASS) {
+            return null;
+        }
+        return JavaProtoBufUtil.readClassDataFrom(getAnnotationData());
+    }
+
+    @Nullable
+    public PackageData readPackageData() {
+        if (type != HeaderType.PACKAGE) {
+            return null;
+        }
+        return JavaProtoBufUtil.readPackageDataFrom(getAnnotationData());
     }
 
     private class ReadDataFromAnnotationVisitor extends ClassVisitor {
 
         public ReadDataFromAnnotationVisitor() {
             super(Opcodes.ASM4);
+        }
+
+        @Override
+        public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+            jvmClassName = JvmClassName.byInternalName(name);
         }
 
         @Override
