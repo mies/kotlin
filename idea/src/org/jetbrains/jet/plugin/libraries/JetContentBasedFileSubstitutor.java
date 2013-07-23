@@ -19,13 +19,15 @@ package org.jetbrains.jet.plugin.libraries;
 import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.ContentBasedClassFileProcessor;
+import com.intellij.openapi.fileTypes.StdFileTypes;
 import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.impl.compiled.ClsFileImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.resolve.java.resolver.KotlinClassFileHeader;
+import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.jet.plugin.highlighter.JetHighlighter;
 
 public class JetContentBasedFileSubstitutor implements ContentBasedClassFileProcessor {
@@ -47,30 +49,38 @@ public class JetContentBasedFileSubstitutor implements ContentBasedClassFileProc
             });
             return false;
         }
+        if (!StdFileTypes.CLASS.getDefaultExtension().equals(file.getExtension())) {
+            return false;
+        }
 
-        return JetDecompiledData.isKotlinFile(project, file);
+        return isKotlinCompiledFile(file);
     }
+
 
     @NotNull
     @Override
     public String obtainFileText(Project project, VirtualFile file) {
-        if (JetDecompiledData.isKotlinFile(project, file)) {
-            ClsFileImpl clsFile = JetDecompiledData.getClsFile(project, file);
-            assert clsFile != null;
-            return JetDecompiledData.getDecompiledData(clsFile).getJetFile().getText();
-        }
+        //TODO: decompiled
         return "";
     }
 
     @Override
     public Language obtainLanguageForFile(VirtualFile file) {
-        return null;
+        return isKotlinCompiledFile(file) ? JetLanguage.INSTANCE : null;
     }
 
     @NotNull
     @Override
     public SyntaxHighlighter createHighlighter(Project project, VirtualFile vFile) {
         return new JetHighlighter();
+    }
+
+    //TODO: common utility
+    public static boolean isKotlinCompiledFile(@NotNull VirtualFile file) {
+        if (!StdFileTypes.CLASS.getDefaultExtension().equals(file.getExtension())) {
+            return false;
+        }
+        return KotlinClassFileHeader.readKotlinHeaderFromClassFile(file).getType() != KotlinClassFileHeader.HeaderType.NONE;
     }
 }
 
