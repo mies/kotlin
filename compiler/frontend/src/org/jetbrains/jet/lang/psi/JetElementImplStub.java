@@ -78,4 +78,9 @@ public class JetElementImplStub<T extends StubElement> extends StubBasedPsiEleme
     public <R, D> R accept(@NotNull JetVisitor<R, D> visitor, D data) {
         return visitor.visitJetElement(this, data);
     }
+
+    @Override
+    public PsiElement getParent() {
+        return getParentByStub();
+    }
 }
