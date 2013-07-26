@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.parsing.JetScriptDefinition;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetNamespaceHeader;
+import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.psi.JetScript;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
@@ -113,8 +114,7 @@ public class ScriptHeaderResolver {
 
     public void processScriptHierarchy(@NotNull JetScript script, @NotNull JetScope outerScope) {
         JetFile file = (JetFile) script.getContainingFile();
-        JetNamespaceHeader namespaceHeader = file.getNamespaceHeader();
-        FqName fqName = namespaceHeader != null ? new FqName(namespaceHeader.getQualifiedName()) : FqName.ROOT;
+        FqName fqName = JetPsiUtil.getFQName(file);
         NamespaceDescriptorImpl ns = namespaceFactory.createNamespaceDescriptorPathIfNeeded(fqName);
 
         Integer priority = script.getUserData(PRIORITY_KEY);

@@ -19,7 +19,7 @@ package org.jetbrains.jet.lang.resolve;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinition;
 import org.jetbrains.jet.lang.parsing.JetScriptDefinitionProvider;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.psi.JetNamespaceHeader;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 
 public class ScriptNameUtil {
     public static final String LAST_EXPRESSION_VALUE_FIELD_NAME = "rv";
@@ -42,9 +42,9 @@ public class ScriptNameUtil {
                 name = name.substring(0,index);
         }
         name = Character.toUpperCase(name.charAt(0)) + (name.length() == 0 ? "" : name.substring(1));
-        JetNamespaceHeader header = file.getNamespaceHeader();
-        if(header != null && header.getName().length() > 0) {
-            name = header.getName().replace('.','/') + "/" + name;
+        FqName fqName = file.getNamespaceFqName();
+        if(fqName != null && fqName.asString().length() > 0) {
+            name = fqName.asString().replace('.','/') + "/" + name;
         }
         return name;
     }

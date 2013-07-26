@@ -80,12 +80,11 @@ public class FileBasedDeclarationProviderFactory implements DeclarationProviderF
     private static Index computeFilesByPackage(@NotNull Collection<JetFile> files) {
         Index index = new Index();
         for (JetFile file : files) {
-            JetNamespaceHeader header = file.getNamespaceHeader();
-            if (header == null) {
+            if (file.isScript()) {
                 throw new IllegalArgumentException("Scripts are not supported");
             }
 
-            FqName packageFqName = new FqName(header.getQualifiedName());
+            FqName packageFqName = file.getNamespaceFqName();
             addMeAndParentPackages(index, packageFqName);
             index.filesByPackage.put(packageFqName, file);
         }

@@ -96,11 +96,11 @@ public class JetNamedFunction extends JetTypeParameterListOwnerStub<PsiJetFuncti
 
         PsiElement parent = getParent();
         if (parent instanceof JetFile) {
+            JetFile jetFile = (JetFile) parent;
             // fqname is different in scripts
-            if (((JetFile) parent).getNamespaceHeader() == null) {
+            if (jetFile.isScript()) {
                 return null;
             }
-            JetFile jetFile = (JetFile) parent;
             FqName fileFQN = JetPsiUtil.getFQName(jetFile);
             Name nameAsName = getNameAsName();
             if (nameAsName != null) {

@@ -113,12 +113,11 @@ public class ScopeProvider {
 
     @NotNull
     private NamespaceDescriptor getFilePackageDescriptor(JetFile file) {
-        JetNamespaceHeader header = file.getNamespaceHeader();
-        if (header == null) {
+        if (file.isScript()) {
             throw new IllegalArgumentException("Scripts are not supported: " + file.getName());
         }
 
-        FqName fqName = new FqName(header.getQualifiedName());
+        FqName fqName = JetPsiUtil.getFQName(file);
         NamespaceDescriptor packageDescriptor = resolveSession.getPackageDescriptorByFqName(fqName);
 
         if (packageDescriptor == null) {
