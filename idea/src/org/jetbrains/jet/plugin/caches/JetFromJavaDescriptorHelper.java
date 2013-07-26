@@ -23,10 +23,11 @@ import com.intellij.psi.*;
 import com.intellij.psi.impl.java.stubs.index.JavaAnnotationIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import jet.KotlinClass;
-import jet.KotlinPackage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.descriptors.serialization.*;
+import org.jetbrains.jet.descriptors.serialization.ClassData;
+import org.jetbrains.jet.descriptors.serialization.DescriptorDeserializer;
+import org.jetbrains.jet.descriptors.serialization.Flags;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
 import org.jetbrains.jet.lang.resolve.java.resolver.KotlinClassFileHeader;
@@ -34,7 +35,6 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.util.QualifiedNamesUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
@@ -44,33 +44,6 @@ import java.util.Set;
 public class JetFromJavaDescriptorHelper {
 
     private JetFromJavaDescriptorHelper() {
-    }
-
-    /**
-     * Get java equivalents for jet top level classes.
-     */
-    static Collection<PsiClass> getClassesForJetNamespaces(Project project, GlobalSearchScope scope) {
-        /* Will iterate through short name caches
-           Kotlin namespaces from jar a class files will be collected from java cache
-           Kotlin namespaces classes from sources will be collected with JetShortNamesCache.getClassesByName */
-        return getClassesByAnnotation(KotlinPackage.class.getSimpleName(), project, scope);
-    }
-
-    /**
-     * Get names that could have jet descriptor equivalents. It could be inaccurate and return more results than necessary.
-     */
-    static Collection<String> getPossiblePackageDeclarationsNames(Project project, GlobalSearchScope scope) {
-        Collection<String> result = new ArrayList<String>();
-
-        for (PsiClass jetNamespaceClass : getClassesForJetNamespaces(project, scope)) {
-            for (PsiMethod psiMethod : jetNamespaceClass.getMethods()) {
-                if (psiMethod.getModifierList().hasModifierProperty(PsiModifier.STATIC)) {
-                    result.add(psiMethod.getName());
-                }
-            }
-        }
-
-        return result;
     }
 
     static Collection<PsiClass> getCompiledClassesForTopLevelObjects(Project project, GlobalSearchScope scope) {
@@ -104,13 +77,6 @@ public class JetFromJavaDescriptorHelper {
         VirtualFile virtualFile = getVirtualFileForPsiClass(psiClass);
         if (virtualFile == null) return null;
         return KotlinClassFileHeader.readKotlinHeaderFromClassFile(virtualFile).readClassData();
-    }
-
-    @Nullable
-    private static PackageData getPackageData(@NotNull PsiClass psiClass) {
-        VirtualFile virtualFile = getVirtualFileForPsiClass(psiClass);
-        if (virtualFile == null) return null;
-        return KotlinClassFileHeader.readKotlinHeaderFromClassFile(virtualFile).readPackageData();
     }
 
     //TODO: common utility
@@ -160,35 +126,5 @@ public class JetFromJavaDescriptorHelper {
             }
         }
         return classes;
-    }
-
-
-    @NotNull
-    public static Collection<FqName> getTopLevelFunctionFqNames(
-            @NotNull Project project,
-            @NotNull GlobalSearchScope scope,
-            boolean shouldBeExtension
-    ) {
-        Collection<FqName> result = Sets.newHashSet();
-        Collection<PsiClass> packageClasses = getClassesByAnnotation(KotlinPackage.class.getSimpleName(), project, scope);
-        for (PsiClass psiClass : packageClasses) {
-            String qualifiedName = psiClass.getQualifiedName();
-            if (qualifiedName == null) {
-                continue;
-            }
-            FqName packageFqName = new FqName(qualifiedName).parent();
-            PackageData data = getPackageData(psiClass);
-            if (data == null) {
-                continue;
-            }
-            NameResolver nameResolver = data.getNameResolver();
-            for (ProtoBuf.Callable callable : data.getPackageProto().getMemberList()) {
-                if (callable.hasReceiverType() == shouldBeExtension) {
-                    Name name = nameResolver.getName(callable.getName());
-                    result.add(packageFqName.child(name));
-                }
-            }
-        }
-        return result;
     }
 }

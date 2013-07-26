@@ -38,8 +38,6 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
-import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
 import org.jetbrains.jet.lang.diagnostics.Diagnostic;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
@@ -49,6 +47,7 @@ import org.jetbrains.jet.lang.resolve.ImportPath;
 import org.jetbrains.jet.lang.resolve.lazy.KotlinCodeAnalyzer;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.name.FqName;
+import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.plugin.JetBundle;
 import org.jetbrains.jet.plugin.actions.JetAddImportAction;
 import org.jetbrains.jet.plugin.caches.JetShortNamesCache;
@@ -58,8 +57,10 @@ import org.jetbrains.jet.plugin.util.JetPsiHeuristicsUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
+
+import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getExtensionFunctionFqNames;
+import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getTopLevelFunctionFqNames;
 
 /**
  * Check possibility and perform fix for unresolved references.
@@ -80,21 +81,20 @@ public class AutoImportFix extends JetHintAction<JetSimpleNameExpression> implem
             return Collections.emptyList();
         }
 
-        String referenceName = element.getReferencedName();
-
-        if (!StringUtil.isNotEmpty(referenceName)) {
+        Condition<String> acceptedTopLevelImports = createNameConditionForElement(element);
+        if (acceptedTopLevelImports == null) {
             return Collections.emptyList();
         }
 
-        ResolveSession resolveSession = WholeProjectAnalyzerFacade.getLazyResolveSessionForFile((JetFile) element.getContainingFile());
-
-        List<FqName> result = Lists.newArrayList();
+        Collection<FqName> result = Sets.newHashSet();
+        Project project = file.getProject();
+        GlobalSearchScope scope = GlobalSearchScope.allScope(project);
         if (!isSuppressedTopLevelImportInPosition(element)) {
-            result.addAll(getClassNames(referenceName, (JetFile) file, resolveSession));
-            result.addAll(getJetTopLevelFunctions(referenceName, element, resolveSession, file.getProject()));
+            ResolveSession resolveSession = WholeProjectAnalyzerFacade.getLazyResolveSessionForFile((JetFile) element.getContainingFile());
+            result.addAll(getClassNames(element.getReferencedName(), (JetFile) file, resolveSession));
+            result.addAll(getTopLevelFunctionFqNames(acceptedTopLevelImports, scope));
         }
-
-        result.addAll(getJetExtensionFunctions(referenceName, element, resolveSession, file.getProject()));
+        result.addAll(getExtensionFunctionFqNames(acceptedTopLevelImports, scope));
 
         return Collections2.filter(result, new Predicate<FqName>() {
             @Override
@@ -105,55 +105,28 @@ public class AutoImportFix extends JetHintAction<JetSimpleNameExpression> implem
         });
     }
 
+    @Nullable
+    private static Condition<String> createNameConditionForElement(@NotNull JetSimpleNameExpression element) {
+        String referenceName = element.getReferencedName();
+        if (!StringUtil.isNotEmpty(referenceName)) {
+            return null;
+        }
+        // name parameter can differ from expression.getReferenceName() when expression contains completion suffix
+        final Name nameForReference =
+                element.getIdentifier() == null ? JetPsiUtil.getConventionName(element) : Name.identifier(referenceName);
+        if (nameForReference == null) {
+            return null;
+        }
+        return new Condition<String>() {
+            @Override
+            public boolean value(String s) {
+                return nameForReference.asString().equals(s);
+            }
+        };
+    }
+
     private static boolean isSuppressedTopLevelImportInPosition(@NotNull JetSimpleNameExpression element) {
         return element.isImportDirectiveExpression() || !JetPsiUtil.isFirstPartInQualified(element);
-    }
-
-    private static Collection<FqName> getJetTopLevelFunctions(
-            @NotNull String referenceName,
-            @NotNull JetSimpleNameExpression expression,
-            @NotNull ResolveSession resolveSession,
-            @NotNull Project project
-    ) {
-        JetShortNamesCache namesCache = JetShortNamesCache.getKotlinInstance(project);
-
-        Collection<FunctionDescriptor> topLevelFunctions = namesCache.getTopLevelFunctionDescriptorsByName(
-                referenceName, expression, resolveSession, GlobalSearchScope.allScope(project));
-
-        return Sets.newHashSet(Collections2.transform(topLevelFunctions, new Function<DeclarationDescriptor, FqName>() {
-            @Override
-            public FqName apply(@Nullable DeclarationDescriptor declarationDescriptor) {
-                assert declarationDescriptor != null;
-                return DescriptorUtils.getFQName(declarationDescriptor).toSafe();
-            }
-        }));
-    }
-
-    private static Collection<FqName> getJetExtensionFunctions(
-            @NotNull final String referenceName,
-            @NotNull JetSimpleNameExpression expression,
-            @NotNull ResolveSession resolveSession,
-            @NotNull Project project
-    ) {
-        JetShortNamesCache namesCache = JetShortNamesCache.getKotlinInstance(project);
-        Collection<DeclarationDescriptor> jetCallableExtensions = namesCache.getJetCallableExtensions(
-                new Condition<String>() {
-                    @Override
-                    public boolean value(String callableExtensionName) {
-                        return callableExtensionName.equals(referenceName);
-                    }
-                },
-                expression,
-                resolveSession,
-                GlobalSearchScope.allScope(project));
-
-        return Sets.newHashSet(Collections2.transform(jetCallableExtensions, new Function<DeclarationDescriptor, FqName>() {
-            @Override
-            public FqName apply(@Nullable DeclarationDescriptor declarationDescriptor) {
-                assert declarationDescriptor != null;
-                return DescriptorUtils.getFQName(declarationDescriptor).toSafe();
-            }
-        }));
     }
 
     /*

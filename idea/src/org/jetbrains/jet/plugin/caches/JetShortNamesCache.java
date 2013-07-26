@@ -22,39 +22,37 @@ import com.google.common.collect.Sets;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
-import com.intellij.psi.*;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiMethod;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.ArrayUtil;
 import com.intellij.util.Processor;
-import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.HashSet;
 import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.asJava.JavaElementFinder;
-import org.jetbrains.jet.lang.descriptors.*;
-import org.jetbrains.jet.lang.psi.*;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
+import org.jetbrains.jet.lang.psi.JetClassOrObject;
+import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
+import org.jetbrains.jet.lang.psi.JetPsiUtil;
+import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingTraceContext;
-import org.jetbrains.jet.lang.resolve.ImportPath;
-import org.jetbrains.jet.lang.resolve.QualifiedExpressionResolver;
 import org.jetbrains.jet.lang.resolve.lazy.KotlinCodeAnalyzer;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
-import org.jetbrains.jet.lang.types.ErrorUtils;
-import org.jetbrains.jet.lang.types.JetType;
-import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
 import org.jetbrains.jet.plugin.caches.resolve.IDELightClassGenerationSupport;
-import org.jetbrains.jet.plugin.stubindex.*;
+import org.jetbrains.jet.plugin.stubindex.JetFullClassNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetShortClassNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetShortFunctionNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetTopLevelShortObjectNameIndex;
 
 import java.util.*;
-
-import static org.jetbrains.jet.plugin.caches.JetFromJavaDescriptorHelper.getTopLevelFunctionFqNames;
 
 /**
  * Will provide both java elements from jet context and some special declarations special to jet.
@@ -146,20 +144,6 @@ public class JetShortNamesCache extends PsiShortNamesCache {
         destination.addAll(Arrays.asList(getAllClassNames()));
     }
 
-    /**
-     * Get jet non-extension top-level function names. Method is allowed to give invalid names - all result should be
-     * checked with getTopLevelFunctionDescriptorsByName().
-     *
-     * @return
-     */
-    @NotNull
-    public Collection<String> getAllTopLevelFunctionNames() {
-        Set<String> functionNames = new HashSet<String>();
-        functionNames.addAll(JetShortFunctionNameIndex.getInstance().getAllKeys(project));
-        functionNames.addAll(JetFromJavaDescriptorHelper.getPossiblePackageDeclarationsNames(project, GlobalSearchScope.allScope(project)));
-        return functionNames;
-    }
-
     @NotNull
     public Collection<String> getAllTopLevelObjectNames() {
         Set<String> topObjectNames = new HashSet<String>();
@@ -211,150 +195,6 @@ public class JetShortNamesCache extends PsiShortNamesCache {
         }
 
         return result;
-    }
-
-    @NotNull
-    public Collection<FunctionDescriptor> getTopLevelFunctionDescriptorsByName(
-            @NotNull final String name,
-            @NotNull JetSimpleNameExpression expression,
-            @NotNull ResolveSession resolveSession,
-            @NotNull GlobalSearchScope scope
-    ) {
-        // name parameter can differ from expression.getReferenceName() when expression contains completion suffix
-        Name referenceName = expression.getIdentifier() == null ? JetPsiUtil.getConventionName(expression) : Name.identifier(name);
-        if (referenceName == null || referenceName.toString().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        BindingContext context = ResolveSessionUtils.resolveToExpression(resolveSession, expression);
-        JetScope jetScope = context.get(BindingContext.RESOLUTION_SCOPE, expression);
-
-        if (jetScope == null) {
-            return Collections.emptyList();
-        }
-
-        Set<FunctionDescriptor> result = Sets.newHashSet();
-
-        Collection<FqName> topLevelFunctionFqNames =
-                ContainerUtil.filter(getTopLevelFunctionFqNames(project, scope, false), new Condition<FqName>() {
-                    @Override
-                    public boolean value(FqName fqName) {
-                        return fqName.lastSegmentIs(Name.identifier(name));
-                    }
-                });
-        for (FqName fqName : topLevelFunctionFqNames) {
-            JetImportDirective importDirective = JetPsiFactory.createImportDirective(project, new ImportPath(fqName, false));
-            Collection<? extends DeclarationDescriptor> declarationDescriptors = new QualifiedExpressionResolver().analyseImportReference(
-                    importDirective, jetScope, new BindingTraceContext(), resolveSession.getRootModuleDescriptor());
-            for (DeclarationDescriptor declarationDescriptor : declarationDescriptors) {
-                if (declarationDescriptor instanceof FunctionDescriptor) {
-                    result.add((FunctionDescriptor) declarationDescriptor);
-                }
-            }
-        }
-
-        Set<FqName> affectedPackages = Sets.newHashSet();
-        Collection<JetNamedFunction> jetNamedFunctions =
-                JetShortFunctionNameIndex.getInstance().get(referenceName.asString(), project, scope);
-        for (JetNamedFunction jetNamedFunction : jetNamedFunctions) {
-            PsiFile containingFile = jetNamedFunction.getContainingFile();
-            if (containingFile instanceof JetFile) {
-                JetFile jetFile = (JetFile) containingFile;
-                String packageName = jetFile.getPackageName();
-                if (packageName != null) {
-                    affectedPackages.add(new FqName(packageName));
-                }
-            }
-        }
-
-        for (FqName affectedPackage : affectedPackages) {
-            NamespaceDescriptor packageDescriptor = resolveSession.getPackageDescriptorByFqName(affectedPackage);
-            assert packageDescriptor != null : "There's a function in stub index with invalid package: " + affectedPackage;
-            JetScope memberScope = packageDescriptor.getMemberScope();
-            result.addAll(memberScope.getFunctions(referenceName));
-        }
-
-        return result;
-    }
-
-    private Collection<PsiElement> getJetExtensionFunctionsByName(@NotNull String name, @NotNull GlobalSearchScope scope) {
-        HashSet<PsiElement> functions = new HashSet<PsiElement>();
-        functions.addAll(JetExtensionFunctionNameIndex.getInstance().get(name, project, scope));
-
-        return functions;
-    }
-
-    // TODO: Make it work for properties
-    @NotNull
-    public Collection<DeclarationDescriptor> getJetCallableExtensions(
-            @NotNull final Condition<String> acceptedNameCondition,
-            @NotNull JetSimpleNameExpression expression,
-            @NotNull ResolveSession resolveSession,
-            @NotNull GlobalSearchScope searchScope
-    ) {
-        BindingContext context = ResolveSessionUtils.resolveToExpression(resolveSession, expression);
-        JetExpression receiverExpression = expression.getReceiverExpression();
-
-        if (receiverExpression == null) {
-            return Collections.emptyList();
-        }
-        JetType expressionType = context.get(BindingContext.EXPRESSION_TYPE, receiverExpression);
-        JetScope scope = context.get(BindingContext.RESOLUTION_SCOPE, receiverExpression);
-
-        if (expressionType == null || scope == null || ErrorUtils.isErrorType(expressionType)) {
-            return Collections.emptyList();
-        }
-
-        Set<FqName> functionFQNs = extensionFunctionsFromSourceFqNames(acceptedNameCondition, searchScope);
-        functionFQNs.addAll(ContainerUtil.filter(getTopLevelFunctionFqNames(project, searchScope, true), new Condition<FqName>() {
-            @Override
-            public boolean value(FqName fqName) {
-                return acceptedNameCondition.value(fqName.shortName().asString());
-            }
-        }));
-
-        Collection<DeclarationDescriptor> resultDescriptors = new ArrayList<DeclarationDescriptor>();
-        // Iterate through the function with attempt to resolve found functions
-        for (FqName functionFQN : functionFQNs) {
-            for (CallableDescriptor functionDescriptor : ExpressionTypingUtils.canFindSuitableCall(
-                    functionFQN, project, receiverExpression, expressionType, scope, resolveSession.getRootModuleDescriptor())) {
-
-                resultDescriptors.add(functionDescriptor);
-            }
-        }
-
-        return resultDescriptors;
-    }
-
-    @NotNull
-    private Set<FqName> extensionFunctionsFromSourceFqNames(
-            @NotNull Condition<String> acceptedNameCondition,
-            @NotNull GlobalSearchScope searchScope
-    ) {
-        Set<String> extensionFunctionNames = new HashSet<String>(JetExtensionFunctionNameIndex.getInstance().getAllKeys(project));
-
-        Set<FqName> functionFQNs = new java.util.HashSet<FqName>();
-
-        // Collect all possible extension function qualified names
-        for (String name : extensionFunctionNames) {
-            if (acceptedNameCondition.value(name)) {
-                Collection<PsiElement> extensionFunctions = getJetExtensionFunctionsByName(name, searchScope);
-
-                for (PsiElement extensionFunction : extensionFunctions) {
-                    if (extensionFunction instanceof JetNamedFunction) {
-                        functionFQNs.add(JetPsiUtil.getFQName((JetNamedFunction) extensionFunction));
-                    }
-                    else if (extensionFunction instanceof PsiMethod) {
-                        FqName functionFQN =
-                                JetFromJavaDescriptorHelper.getJetTopLevelDeclarationFQN((PsiMethod) extensionFunction);
-                        if (functionFQN != null) {
-                            functionFQNs.add(functionFQN);
-                        }
-                    }
-                }
-            }
-        }
-        return functionFQNs;
     }
 
     public Collection<ClassDescriptor> getJetClassesDescriptors(
