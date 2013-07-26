@@ -24,6 +24,7 @@ import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.StubBasedPsiElement;
 import com.intellij.psi.stubs.IStubElementType;
 import com.intellij.psi.stubs.StubElement;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.plugin.JetLanguage;
 
@@ -82,5 +83,23 @@ public class JetElementImplStub<T extends StubElement> extends StubBasedPsiEleme
     @Override
     public PsiElement getParent() {
         return getParentByStub();
+    }
+
+    @NotNull
+    @Override
+    public ASTNode getNode() {
+        assert notTryingToAccessAstForCompiledPsi();
+        return super.getNode();
+    }
+
+    private boolean notTryingToAccessAstForCompiledPsi() {
+        if (getStub() != null) {
+            JetFile file = PsiTreeUtil.getParentOfType(this, JetFile.class, true);
+            assert file != null : "Psi corrupted." + this + " should be contained in JetFile.";
+            if (file.isCompiled()) {
+                return false;
+            }
+        }
+        return true;
     }
 }
