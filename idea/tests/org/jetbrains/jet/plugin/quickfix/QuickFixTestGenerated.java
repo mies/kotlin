@@ -341,11 +341,6 @@ public class QuickFixTestGenerated extends AbstractQuickFixTest {
             doTest("idea/testData/quickfix/autoImports/beforeNamelessProperty.kt");
         }
         
-        @TestMetadata("beforeNoImportForAlreadyImported.kt")
-        public void testNoImportForAlreadyImported() throws Exception {
-            doTest("idea/testData/quickfix/autoImports/beforeNoImportForAlreadyImported.kt");
-        }
-        
         @TestMetadata("beforeNoImportForIndex.kt")
         public void testNoImportForIndex() throws Exception {
             doTest("idea/testData/quickfix/autoImports/beforeNoImportForIndex.kt");
