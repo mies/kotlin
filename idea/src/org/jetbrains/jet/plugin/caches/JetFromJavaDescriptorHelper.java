@@ -16,27 +16,16 @@
 
 package org.jetbrains.jet.plugin.caches;
 
-import com.google.common.collect.Sets;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.*;
-import com.intellij.psi.impl.java.stubs.index.JavaAnnotationIndex;
-import com.intellij.psi.search.GlobalSearchScope;
-import jet.KotlinClass;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.descriptors.serialization.ClassData;
 import org.jetbrains.jet.descriptors.serialization.DescriptorDeserializer;
 import org.jetbrains.jet.descriptors.serialization.Flags;
 import org.jetbrains.jet.lang.descriptors.ClassKind;
-import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
 import org.jetbrains.jet.lang.resolve.java.resolver.KotlinClassFileHeader;
-import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.name.Name;
-import org.jetbrains.jet.util.QualifiedNamesUtil;
-
-import java.util.Collection;
-import java.util.Set;
 
 /**
  * Number of helper methods for searching jet element prototypes in java. Methods use java indices for search.
@@ -44,24 +33,6 @@ import java.util.Set;
 public class JetFromJavaDescriptorHelper {
 
     private JetFromJavaDescriptorHelper() {
-    }
-
-    static Collection<PsiClass> getCompiledClassesForTopLevelObjects(Project project, GlobalSearchScope scope) {
-        Set<PsiClass> jetObjectClasses = Sets.newHashSet();
-
-        Collection<PsiClass> classesByAnnotation = getClassesByAnnotation(KotlinClass.class.getSimpleName(), project, scope);
-
-        for (PsiClass psiClass : classesByAnnotation) {
-            ClassKind kind = getCompiledClassKind(psiClass);
-            if (kind == null) {
-                continue;
-            }
-            if (psiClass.getContainingClass() == null && kind == ClassKind.OBJECT) {
-                jetObjectClasses.add(psiClass);
-            }
-        }
-
-        return jetObjectClasses;
     }
 
     @Nullable
@@ -92,39 +63,5 @@ public class JetFromJavaDescriptorHelper {
             return null;
         }
         return virtualFile;
-    }
-
-    @Nullable
-    static FqName getJetTopLevelDeclarationFQN(@NotNull PsiMethod method) {
-        PsiClass containingClass = method.getContainingClass();
-
-        if (containingClass != null) {
-            String qualifiedName = containingClass.getQualifiedName();
-            assert qualifiedName != null;
-
-            FqName classFQN = new FqName(qualifiedName);
-
-            if (DescriptorResolverUtils.isCompiledKotlinPackageClass(containingClass)) {
-                FqName classParentFQN = QualifiedNamesUtil.withoutLastSegment(classFQN);
-                return QualifiedNamesUtil.combine(classParentFQN, Name.identifier(method.getName()));
-            }
-        }
-
-        return null;
-    }
-
-    private static Collection<PsiClass> getClassesByAnnotation(
-            String annotationName, Project project, GlobalSearchScope scope
-    ) {
-        Collection<PsiClass> classes = Sets.newHashSet();
-        Collection<PsiAnnotation> annotations = JavaAnnotationIndex.getInstance().get(annotationName, project, scope);
-        for (PsiAnnotation annotation : annotations) {
-            PsiModifierList modifierList = (PsiModifierList) annotation.getParent();
-            PsiElement owner = modifierList.getParent();
-            if (owner instanceof PsiClass) {
-                classes.add((PsiClass) owner);
-            }
-        }
-        return classes;
     }
 }

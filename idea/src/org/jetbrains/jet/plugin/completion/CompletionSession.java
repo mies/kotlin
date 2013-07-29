@@ -50,6 +50,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
+import static org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils.getClassOrObjectDescriptorsByFqName;
+import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getTopLevelObjectFqNames;
+
 import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.*;
 
 public class CompletionSession {
@@ -125,7 +128,7 @@ public class CompletionSession {
         if (shouldRunTopLevelCompletion()) {
             JetTypesCompletionHelper.addJetTypes(parameters, jetResult);
             addTopLevelFunctions();
-            addJetTopLevelObjects();
+            addTopLevelObjects();
         }
 
         if (shouldRunExtensionsCompletion()) {
@@ -195,16 +198,13 @@ public class CompletionSession {
         jetResult.addAllElements(result);
     }
 
-    private void addJetTopLevelObjects() {
+    private void addTopLevelObjects() {
         Project project = getPosition().getProject();
-        JetShortNamesCache namesCache = JetShortNamesCache.getKotlinInstance(project);
-        GlobalSearchScope scope = GlobalSearchScope.allScope(project);
-        Collection<String> objectNames = namesCache.getAllTopLevelObjectNames();
-
-        for (String name : objectNames) {
-            if (jetResult.getResult().getPrefixMatcher().prefixMatches(name)) {
-                jetResult.addAllElements(namesCache.getTopLevelObjectsByName(name, jetReference.getExpression(), getResolveSession(), scope));
-            }
+        ResolveSession resolveSession = getResolveSession();
+        Condition<String> acceptedShortNameCondition = jetResult.getShortNameFilter();
+        Collection<FqName> topLevelObjectFqNames = getTopLevelObjectFqNames(acceptedShortNameCondition, GlobalSearchScope.allScope(project));
+        for (FqName objectDeclaration : topLevelObjectFqNames) {
+            jetResult.addAllElements(getClassOrObjectDescriptorsByFqName(resolveSession, objectDeclaration, true));
         }
     }
 
@@ -228,7 +228,7 @@ public class CompletionSession {
         PsiElement element = getPosition();
         if (getPosition().getNode().getElementType() == JetTokens.IDENTIFIER) {
             if (element.getParent() instanceof JetSimpleNameExpression) {
-                JetSimpleNameExpression nameExpression = (JetSimpleNameExpression)element.getParent();
+                JetSimpleNameExpression nameExpression = (JetSimpleNameExpression) element.getParent();
 
                 // Top level completion should be executed for simple name which is not in qualified expression
                 if (PsiTreeUtil.getParentOfType(nameExpression, JetQualifiedExpression.class) != null) {

@@ -26,6 +26,7 @@ import org.jetbrains.jet.lang.psi.stubs.PsiJetFileStub;
 import org.jetbrains.jet.lang.psi.stubs.elements.JetStubElementTypes;
 import org.jetbrains.jet.lang.psi.stubs.impl.PsiJetFileStubImpl;
 import org.jetbrains.jet.lang.psi.stubs.impl.PsiJetFunctionStubImpl;
+import org.jetbrains.jet.lang.psi.stubs.impl.PsiJetObjectStubImpl;
 import org.jetbrains.jet.lang.resolve.java.resolver.KotlinClassFileHeader;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.resolve.name.Name;
@@ -73,6 +74,7 @@ public final class CompiledPackageClassStubBuilder {
                 //TODO:
                 throw new IllegalStateException("");
             case OBJECT_PROPERTY:
+                new PsiJetObjectStubImpl(JetStubElementTypes.OBJECT_DECLARATION, parentStub, callableName, callableFqName, true, false);
                 break;
         }
     }

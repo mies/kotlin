@@ -16,9 +16,6 @@
 
 package org.jetbrains.jet.plugin.caches;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Sets;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
@@ -33,24 +30,17 @@ import com.intellij.util.containers.HashSet;
 import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.asJava.JavaElementFinder;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.psi.JetClassOrObject;
-import org.jetbrains.jet.lang.psi.JetObjectDeclaration;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
-import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
-import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.lazy.KotlinCodeAnalyzer;
-import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.plugin.caches.resolve.IDELightClassGenerationSupport;
 import org.jetbrains.jet.plugin.stubindex.JetFullClassNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetShortClassNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetShortFunctionNameIndex;
-import org.jetbrains.jet.plugin.stubindex.JetTopLevelShortObjectNameIndex;
 
 import java.util.*;
 
@@ -142,59 +132,6 @@ public class JetShortNamesCache extends PsiShortNamesCache {
     @Override
     public void getAllClassNames(@NotNull HashSet<String> destination) {
         destination.addAll(Arrays.asList(getAllClassNames()));
-    }
-
-    @NotNull
-    public Collection<String> getAllTopLevelObjectNames() {
-        Set<String> topObjectNames = new HashSet<String>();
-        topObjectNames.addAll(JetTopLevelShortObjectNameIndex.getInstance().getAllKeys(project));
-
-        Collection<PsiClass> classObjects =
-                JetFromJavaDescriptorHelper.getCompiledClassesForTopLevelObjects(project, GlobalSearchScope.allScope(project));
-        topObjectNames.addAll(Collections2.transform(classObjects, new Function<PsiClass, String>() {
-            @Override
-            public String apply(@Nullable PsiClass aClass) {
-                assert aClass != null;
-                return aClass.getName();
-            }
-        }));
-
-        return topObjectNames;
-    }
-
-    @NotNull
-    public Collection<ClassDescriptor> getTopLevelObjectsByName(
-            @NotNull String name,
-            @NotNull JetSimpleNameExpression expression,
-            @NotNull ResolveSession resolveSession,
-            @NotNull GlobalSearchScope scope
-    ) {
-        BindingContext context = ResolveSessionUtils.resolveToExpression(resolveSession, expression);
-        JetScope jetScope = context.get(BindingContext.RESOLUTION_SCOPE, expression);
-
-        if (jetScope == null) {
-            return Collections.emptyList();
-        }
-
-        Set<ClassDescriptor> result = Sets.newHashSet();
-
-        Collection<JetObjectDeclaration> topObjects = JetTopLevelShortObjectNameIndex.getInstance().get(name, project, scope);
-        for (JetObjectDeclaration objectDeclaration : topObjects) {
-            FqName fqName = JetPsiUtil.getFQName(objectDeclaration);
-            assert fqName != null : "Local object declaration in JetTopLevelShortObjectNameIndex:" + objectDeclaration.getText();
-            result.addAll(ResolveSessionUtils.getClassOrObjectDescriptorsByFqName(resolveSession, fqName, true));
-        }
-
-        for (PsiClass psiClass : JetFromJavaDescriptorHelper
-                .getCompiledClassesForTopLevelObjects(project, GlobalSearchScope.allScope(project))) {
-            String qualifiedName = psiClass.getQualifiedName();
-            if (qualifiedName != null) {
-                FqName fqName = new FqName(qualifiedName);
-                result.addAll(ResolveSessionUtils.getClassOrObjectDescriptorsByFqName(resolveSession, fqName, true));
-            }
-        }
-
-        return result;
     }
 
     public Collection<ClassDescriptor> getJetClassesDescriptors(

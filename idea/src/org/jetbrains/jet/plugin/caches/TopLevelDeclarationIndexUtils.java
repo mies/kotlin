@@ -27,6 +27,7 @@ import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.stubindex.JetExtensionFunctionNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetShortFunctionNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetTopLevelShortObjectNameIndex;
 
 import java.util.Collection;
 import java.util.Set;
@@ -48,6 +49,15 @@ public final class TopLevelDeclarationIndexUtils {
     ) {
         return getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(acceptedShortNameCondition, searchScope,
                                                                      JetShortFunctionNameIndex.getInstance());
+    }
+
+    @NotNull
+    public static Collection<FqName> getTopLevelObjectFqNames(
+            @NotNull Condition<String> acceptedShortNameCondition,
+            @NotNull GlobalSearchScope searchScope
+    ) {
+        return getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(acceptedShortNameCondition, searchScope,
+                                                                     JetTopLevelShortObjectNameIndex.getInstance());
     }
 
     @NotNull
