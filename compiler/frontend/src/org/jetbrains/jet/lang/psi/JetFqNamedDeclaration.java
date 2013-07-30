@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package org.jetbrains.jet.lang.psi.stubs;
+package org.jetbrains.jet.lang.psi;
 
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.jet.lang.psi.JetParameter;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 
-public interface PsiJetParameterStub extends PsiJetStubWithFqName<JetParameter> {
-    boolean isMutable();
-    boolean isVarArg();
-
+/**
+ * Represents an entity that can possibly have FqName
+ */
+//NOTE: it may be convenient to merge with JetNamedDeclaration
+public interface JetFqNamedDeclaration extends JetNamedDeclaration {
     @Nullable
-    String getTypeText();
-
-    @Nullable
-    String getDefaultValueText();
+    FqName getFqName();
 }

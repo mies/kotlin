@@ -52,7 +52,7 @@ public class JetClassElementType extends JetStubElementType<PsiJetClassStub, Jet
 
     @Override
     public PsiJetClassStub createStub(@NotNull JetClass psi, StubElement parentStub) {
-        FqName fqName = JetPsiUtil.getFQName(psi);
+        FqName fqName = psi.getFqName();
         boolean isEnumEntry = psi instanceof JetEnumEntry;
         return new PsiJetClassStubImpl(getStubType(isEnumEntry), parentStub, fqName != null ? fqName.asString() : null, psi.getName(),
                                        psi.getSuperNames(), psi.isTrait(), psi.isEnum(), isEnumEntry, psi.isAnnotation(), psi.isInner());

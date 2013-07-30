@@ -22,8 +22,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.stubs.StringStubIndexExtension;
 import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.psi.JetNamedDeclaration;
-import org.jetbrains.jet.lang.psi.JetPsiUtil;
+import org.jetbrains.jet.lang.psi.JetFqNamedDeclaration;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.stubindex.JetTopLevelExtensionFunctionShortNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetTopLevelNonExtensionFunctionShortNameIndex;
@@ -61,7 +60,7 @@ public final class TopLevelDeclarationIndexUtils {
     }
 
     @NotNull
-    private static <T extends JetNamedDeclaration> Collection<FqName> getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(
+    private static <T extends JetFqNamedDeclaration> Collection<FqName> getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(
             @NotNull Condition<String> acceptedShortNameCondition,
             @NotNull GlobalSearchScope searchScope,
             @NotNull StringStubIndexExtension<T> index
@@ -72,7 +71,7 @@ public final class TopLevelDeclarationIndexUtils {
         for (String name : acceptedShortNames) {
             Collection<T> entities = index.get(name, searchScope.getProject(), searchScope);
             for (T entity : entities) {
-                ContainerUtil.addIfNotNull(result, JetPsiUtil.getFQName(entity));
+                ContainerUtil.addIfNotNull(result, entity.getFqName());
             }
         }
         return result;

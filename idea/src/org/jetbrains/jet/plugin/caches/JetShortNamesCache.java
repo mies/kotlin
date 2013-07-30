@@ -114,7 +114,7 @@ public class JetShortNamesCache extends PsiShortNamesCache {
         }
 
         for (JetClassOrObject classOrObject : classOrObjects) {
-            FqName fqName = JetPsiUtil.getFQName(classOrObject);
+            FqName fqName = classOrObject.getFqName();
             if (fqName != null) {
                 assert fqName.shortName().asString().equals(name) : "A declaration obtained from index has non-matching name:\n" +
                                                                     "in index: " + name + "\n" +

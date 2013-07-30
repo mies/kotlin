@@ -238,8 +238,8 @@ public class JetImportOptimizer implements ImportOptimizer {
             }
         }
 
-        if (element instanceof JetNamedDeclaration) {
-            return JetPsiUtil.getFQName((JetNamedDeclaration) element);
+        if (element instanceof JetFqNamedDeclaration) {
+            return ((JetFqNamedDeclaration) element).getFqName();
         }
 
         if (element instanceof PsiClass) {

@@ -28,7 +28,8 @@ import org.jetbrains.jet.lang.psi.stubs.PsiJetParameterStub;
 import org.jetbrains.jet.lang.psi.stubs.elements.JetStubElementTypes;
 import org.jetbrains.jet.lexer.JetTokens;
 
-public class JetParameter extends JetNamedDeclarationStub<PsiJetParameterStub> {
+//NOTE: JetParameter has FqName if it is a property parameter of a class
+public class JetParameter extends JetFqNamedDeclarationStub<PsiJetParameterStub> {
     public static final JetParameter[] EMPTY_ARRAY = new JetParameter[0];
 
     public static final ArrayFactory<JetParameter> ARRAY_FACTORY = new ArrayFactory<JetParameter>() {

@@ -24,10 +24,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.util.ArrayUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jet.lang.psi.JetClass;
-import org.jetbrains.jet.lang.psi.JetClassOrObject;
-import org.jetbrains.jet.lang.psi.JetNamedDeclaration;
-import org.jetbrains.jet.lang.psi.JetPsiUtil;
+import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.stubindex.JetClassShortNameIndex;
 
@@ -39,9 +36,9 @@ import java.util.List;
 public class JetGotoClassContributor implements GotoClassContributor {
     @Override
     public String getQualifiedName(NavigationItem item) {
-        if (item instanceof JetNamedDeclaration) {
-            JetNamedDeclaration jetClass = (JetNamedDeclaration) item;
-            FqName name = JetPsiUtil.getFQName(jetClass);
+        if (item instanceof JetFqNamedDeclaration) {
+            JetFqNamedDeclaration jetClass = (JetFqNamedDeclaration) item;
+            FqName name = jetClass.getFqName();
             if (name != null) {
                 return name.asString();
             }
@@ -82,7 +79,7 @@ public class JetGotoClassContributor implements GotoClassContributor {
 
         List<NavigationItem> items = new ArrayList<NavigationItem>();
         for (JetClassOrObject classOrObject : classesOrObjects) {
-            FqName fqName = JetPsiUtil.getFQName(classOrObject);
+            FqName fqName = classOrObject.getFqName();
             if (fqName == null || javaQualifiedNames.contains(fqName.toString())) {
                 // Elements will be added by Java class contributor
                 continue;

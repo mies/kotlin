@@ -73,7 +73,7 @@ public class JetPropertyElementType extends JetStubElementType<PsiJetPropertyStu
                               psi.getText(), psi.getParent() != null ? psi.getParent().getText() : "<no parent>");
 
         return new PsiJetPropertyStubImpl(JetStubElementTypes.PROPERTY, parentStub,
-            psi.getName(), psi.isVar(), psi.isTopLevel(), JetPsiUtil.getFQName(psi),
+            psi.getName(), psi.isVar(), psi.isTopLevel(), psi.getFqName(),
             typeRef != null ? typeRef.getText() : null,
             expression != null ? expression.getText() : null);
     }
@@ -84,8 +84,8 @@ public class JetPropertyElementType extends JetStubElementType<PsiJetPropertyStu
         dataStream.writeBoolean(stub.isVar());
         dataStream.writeBoolean(stub.isTopLevel());
 
-        FqName topFQName = stub.getTopFQName();
-        dataStream.writeName(topFQName != null ? topFQName.toString() : null);
+        FqName fqName = stub.getFqName();
+        dataStream.writeName(fqName != null ? fqName.asString() : null);
 
         dataStream.writeName(stub.getTypeText());
         dataStream.writeName(stub.getInferenceBodyText());
@@ -97,8 +97,8 @@ public class JetPropertyElementType extends JetStubElementType<PsiJetPropertyStu
         boolean isVar = dataStream.readBoolean();
         boolean isTopLevel = dataStream.readBoolean();
 
-        StringRef topFQNameStr = dataStream.readName();
-        FqName fqName = topFQNameStr != null ? new FqName(topFQNameStr.toString()) : null;
+        StringRef fqNameAsString = dataStream.readName();
+        FqName fqName = fqNameAsString != null ? new FqName(fqNameAsString.toString()) : null;
 
         StringRef typeText = dataStream.readName();
         StringRef inferenceBodyText = dataStream.readName();

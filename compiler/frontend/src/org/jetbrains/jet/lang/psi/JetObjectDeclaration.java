@@ -26,14 +26,13 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.JetNodeTypes;
 import org.jetbrains.jet.lang.psi.stubs.PsiJetObjectStub;
 import org.jetbrains.jet.lang.psi.stubs.elements.JetStubElementTypes;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lexer.JetToken;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.Collections;
 import java.util.List;
 
-public class JetObjectDeclaration extends JetNamedDeclarationStub<PsiJetObjectStub> implements JetClassOrObject  {
+public class JetObjectDeclaration extends JetFqNamedDeclarationStub<PsiJetObjectStub> implements JetClassOrObject  {
     public JetObjectDeclaration(@NotNull ASTNode node) {
         super(node);
     }
@@ -57,19 +56,6 @@ public class JetObjectDeclaration extends JetNamedDeclarationStub<PsiJetObjectSt
 
         JetObjectDeclarationName nameAsDeclaration = getNameAsDeclaration();
         return nameAsDeclaration == null ? null : nameAsDeclaration.getName();
-    }
-
-    /**
-     * Could be null for anonymous objects and object declared inside functions
-     * @return
-     */
-    public FqName getFqName() {
-        PsiJetObjectStub stub = getStub();
-        if (stub != null) {
-            return stub.getFqName();
-        }
-
-        return JetPsiUtil.getFQName(this);
     }
 
     public boolean isTopLevel() {

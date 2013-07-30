@@ -19,7 +19,7 @@ package org.jetbrains.jet.plugin.presentation;
 import com.intellij.navigation.ColoredItemPresentation;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import org.jetbrains.jet.lang.psi.JetNamedDeclaration;
+import org.jetbrains.jet.lang.psi.JetFqNamedDeclaration;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.JetIconProvider;
@@ -27,9 +27,9 @@ import org.jetbrains.jet.plugin.JetIconProvider;
 import javax.swing.*;
 
 public class JetDefaultNamedDeclarationPresentation implements ColoredItemPresentation {
-    private final JetNamedDeclaration declaration;
+    private final JetFqNamedDeclaration declaration;
 
-    JetDefaultNamedDeclarationPresentation(JetNamedDeclaration declaration) {
+    JetDefaultNamedDeclarationPresentation(JetFqNamedDeclaration declaration) {
         this.declaration = declaration;
     }
 
@@ -48,7 +48,7 @@ public class JetDefaultNamedDeclarationPresentation implements ColoredItemPresen
 
     @Override
     public String getLocationString() {
-        FqName name = JetPsiUtil.getFQName(declaration);
+        FqName name = declaration.getFqName();
         if (name != null) {
             return "(" + name.parent().toString() + ")";
         }

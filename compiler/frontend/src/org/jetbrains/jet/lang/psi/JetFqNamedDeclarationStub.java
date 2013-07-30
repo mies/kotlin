@@ -17,30 +17,28 @@
 package org.jetbrains.jet.lang.psi;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.psi.stubs.IStubElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.psi.stubs.PsiJetStubWithFqName;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
-public class JetObjectDeclarationName extends JetNamedDeclarationNotStubbed implements JetFqNamedDeclaration {
+abstract class JetFqNamedDeclarationStub<T extends PsiJetStubWithFqName> extends JetNamedDeclarationStub<T> implements JetFqNamedDeclaration {
+    public JetFqNamedDeclarationStub(@NotNull T stub, @NotNull IStubElementType nodeType) {
+        super(stub, nodeType);
+    }
 
-    public JetObjectDeclarationName(@NotNull ASTNode node) {
+    public JetFqNamedDeclarationStub(@NotNull ASTNode node) {
         super(node);
     }
 
-    @Override
-    public void accept(@NotNull JetVisitorVoid visitor) {
-        visitor.visitObjectDeclarationName(this);
-    }
-
-    @Override
-    public <R, D> R accept(@NotNull JetVisitor<R, D> visitor, D data) {
-        return visitor.visitObjectDeclarationName(this, data);
-    }
-
-    //TODO: make stubbed implementation
     @Nullable
     @Override
     public FqName getFqName() {
+        T stub = getStub();
+        if (stub != null) {
+            return stub.getFqName();
+        }
         return JetPsiUtil.getFQName(this);
     }
 }

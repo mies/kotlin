@@ -162,10 +162,12 @@ public class JetPsiUtil {
         return header != null ? header : FqName.ROOT;
     }
 
+    //NOTE: use JetFqNamedDeclaration#getFqName()
+    //TODO: move implementations to appropriate classes
     @Nullable
-    public static FqName getFQName(@NotNull JetNamedDeclaration namedDeclaration) {
+    public static FqName getFQName(@NotNull JetFqNamedDeclaration namedDeclaration) {
         if (namedDeclaration instanceof JetObjectDeclarationName) {
-            JetNamedDeclaration objectDeclaration = PsiTreeUtil.getParentOfType(namedDeclaration, JetObjectDeclaration.class);
+            JetFqNamedDeclaration objectDeclaration = PsiTreeUtil.getParentOfType(namedDeclaration, JetObjectDeclaration.class);
             if (objectDeclaration == null) {
                 objectDeclaration = PsiTreeUtil.getParentOfType(namedDeclaration, JetEnumEntry.class);
             }
@@ -193,7 +195,7 @@ public class JetPsiUtil {
             firstPart = getFQName((JetFile) parent);
         }
         else if (parent instanceof JetNamedFunction || parent instanceof JetClass) {
-            firstPart = getFQName((JetNamedDeclaration) parent);
+            firstPart = getFQName((JetFqNamedDeclaration) parent);
         }
         else if (namedDeclaration instanceof JetParameter) {
             JetClass constructorClass = getClassIfParameterIsProperty((JetParameter) namedDeclaration);
@@ -209,7 +211,7 @@ public class JetPsiUtil {
                 }
             }
             else {
-                firstPart = getFQName((JetNamedDeclaration) parent);
+                firstPart = getFQName((JetFqNamedDeclaration) parent);
             }
         }
 

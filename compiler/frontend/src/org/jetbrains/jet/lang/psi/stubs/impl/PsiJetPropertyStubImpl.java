@@ -29,32 +29,32 @@ public class PsiJetPropertyStubImpl extends StubBase<JetProperty> implements Psi
     private final StringRef name;
     private final boolean isVar;
     private final boolean isTopLevel;
-    private final FqName topFQName;
+    private final FqName fqName;
     private final StringRef typeText;
     private final StringRef inferenceBodyText;
 
     public PsiJetPropertyStubImpl(IStubElementType elementType, StubElement parent, StringRef name,
-            boolean isVar, boolean isTopLevel, @Nullable FqName topFQName, StringRef typeText, StringRef inferenceBodyText) {
+            boolean isVar, boolean isTopLevel, @Nullable FqName fqName, StringRef typeText, StringRef inferenceBodyText) {
         super(parent, elementType);
 
-        if (isTopLevel && topFQName == null) {
-            throw new IllegalArgumentException("topFQName shouldn't be null for top level properties");
+        if (isTopLevel && fqName == null) {
+            throw new IllegalArgumentException("fqName shouldn't be null for top level properties");
         }
 
         this.name = name;
         this.isVar = isVar;
         this.isTopLevel = isTopLevel;
-        this.topFQName = topFQName;
+        this.fqName = fqName;
         this.typeText = typeText;
         this.inferenceBodyText = inferenceBodyText;
     }
 
     public PsiJetPropertyStubImpl(IStubElementType elementType, StubElement parent, String name,
-            boolean isVal, boolean isTopLevel, @Nullable FqName topFQName,
+            boolean isVal, boolean isTopLevel, @Nullable FqName fqName,
             String typeText, String inferenceBodyText
     ) {
         this(elementType, parent, StringRef.fromString(name),
-             isVal, isTopLevel, topFQName, StringRef.fromString(typeText), StringRef.fromString(inferenceBodyText));
+             isVal, isTopLevel, fqName, StringRef.fromString(typeText), StringRef.fromString(inferenceBodyText));
     }
 
     @Override
@@ -69,8 +69,8 @@ public class PsiJetPropertyStubImpl extends StubBase<JetProperty> implements Psi
 
     @Nullable
     @Override
-    public FqName getTopFQName() {
-        return topFQName;
+    public FqName getFqName() {
+        return fqName;
     }
 
     @Override
@@ -97,8 +97,8 @@ public class PsiJetPropertyStubImpl extends StubBase<JetProperty> implements Psi
         builder.append(isVar() ? "var " : "val ");
 
         if (isTopLevel()) {
-            assert topFQName != null;
-            builder.append("top ").append("topFQName=").append(topFQName.toString()).append(" ");
+            assert fqName != null;
+            builder.append("top ").append("fqName=").append(fqName.toString()).append(" ");
         }
 
         builder.append("name=").append(getName());

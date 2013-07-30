@@ -103,7 +103,7 @@ public class JetSourceNavigationHelper {
     }
 
     @NotNull
-    private static GlobalSearchScope createLibrarySourcesScope(@NotNull JetNamedDeclaration decompiledDeclaration) {
+    private static GlobalSearchScope createLibrarySourcesScope(@NotNull JetFqNamedDeclaration decompiledDeclaration) {
         JetFile containingFile = (JetFile) decompiledDeclaration.getContainingFile();
         VirtualFile libraryFile = containingFile.getVirtualFile();
         if (libraryFile == null) {
@@ -122,9 +122,9 @@ public class JetSourceNavigationHelper {
         return resultScope;
     }
 
-    private static List<JetFile> getContainingFiles(@NotNull Iterable<JetNamedDeclaration> declarations) {
+    private static List<JetFile> getContainingFiles(@NotNull Iterable<JetFqNamedDeclaration> declarations) {
         Set<JetFile> result = Sets.newHashSet();
-        for (JetNamedDeclaration declaration : declarations) {
+        for (JetFqNamedDeclaration declaration : declarations) {
             PsiFile containingFile = declaration.getContainingFile();
             if (containingFile instanceof JetFile) {
                 result.add((JetFile) containingFile);
@@ -145,7 +145,7 @@ public class JetSourceNavigationHelper {
     }
 
     @Nullable
-    private static JetNamedDeclaration findSpecialProperty(@NotNull Name memberName, @NotNull JetClass containingClass) {
+    private static JetFqNamedDeclaration findSpecialProperty(@NotNull Name memberName, @NotNull JetClass containingClass) {
         // property constructor parameters
         List<JetParameter> constructorParameters = containingClass.getPrimaryConstructorParameters();
         for (JetParameter constructorParameter : constructorParameters) {
@@ -166,14 +166,14 @@ public class JetSourceNavigationHelper {
     }
 
     @Nullable
-    private static JetNamedDeclaration getSourcePropertyOrFunction(@NotNull JetNamedDeclaration decompiledDeclaration) {
+    private static JetFqNamedDeclaration getSourcePropertyOrFunction(@NotNull JetFqNamedDeclaration decompiledDeclaration) {
         String memberNameAsString = decompiledDeclaration.getName();
         assert memberNameAsString != null;
         Name memberName = Name.identifier(memberNameAsString);
 
         PsiElement decompiledContainer = decompiledDeclaration.getParent();
 
-        Collection<JetNamedDeclaration> candidates;
+        Collection<JetFqNamedDeclaration> candidates;
         if (decompiledContainer instanceof JetFile) {
             candidates = getInitialTopLevelCandidates(decompiledDeclaration);
         }
@@ -183,8 +183,8 @@ public class JetSourceNavigationHelper {
 
             //noinspection unchecked
             candidates = sourceClassOrObject == null
-                         ? Collections.<JetNamedDeclaration>emptyList()
-                         : getInitialMemberCandidates(sourceClassOrObject, memberName, (Class<JetNamedDeclaration>) decompiledDeclaration.getClass());
+                         ? Collections.<JetFqNamedDeclaration>emptyList()
+                         : getInitialMemberCandidates(sourceClassOrObject, memberName, (Class<JetFqNamedDeclaration>) decompiledDeclaration.getClass());
 
             if (candidates.isEmpty()) {
                 if (decompiledDeclaration instanceof JetProperty && sourceClassOrObject instanceof JetClass) {
@@ -232,7 +232,7 @@ public class JetSourceNavigationHelper {
                 moduleDescriptor,
                 providerFactory);
 
-        for (JetNamedDeclaration candidate : candidates) {
+        for (JetFqNamedDeclaration candidate : candidates) {
             //noinspection unchecked
             CallableDescriptor candidateDescriptor = (CallableDescriptor) analyzer.resolveToDescriptor(candidate);
             if (receiversMatch(decompiledDeclaration, candidateDescriptor)
@@ -247,7 +247,7 @@ public class JetSourceNavigationHelper {
 
     @Nullable
     private static JetClassOrObject getSourceForNamedClassOrObject(@NotNull JetClassOrObject decompiledClassOrObject) {
-        FqName classFqName = JetPsiUtil.getFQName(decompiledClassOrObject);
+        FqName classFqName = decompiledClassOrObject.getFqName();
         assert classFqName != null;
 
         GlobalSearchScope librarySourcesScope = createLibrarySourcesScope(decompiledClassOrObject);
@@ -263,8 +263,8 @@ public class JetSourceNavigationHelper {
     }
 
     @NotNull
-    private static Collection<JetNamedDeclaration> getInitialTopLevelCandidates(@NotNull JetNamedDeclaration decompiledDeclaration) {
-        FqName memberFqName = JetPsiUtil.getFQName(decompiledDeclaration);
+    private static Collection<JetFqNamedDeclaration> getInitialTopLevelCandidates(@NotNull JetFqNamedDeclaration decompiledDeclaration) {
+        FqName memberFqName = decompiledDeclaration.getFqName();
         assert memberFqName != null;
 
         GlobalSearchScope librarySourcesScope = createLibrarySourcesScope(decompiledDeclaration);
@@ -272,13 +272,13 @@ public class JetSourceNavigationHelper {
             return Collections.emptyList();
         }
         //noinspection unchecked
-        StringStubIndexExtension<JetNamedDeclaration> index =
-                (StringStubIndexExtension<JetNamedDeclaration>) getIndexForTopLevelPropertyOrFunction(decompiledDeclaration);
+        StringStubIndexExtension<JetFqNamedDeclaration> index =
+                (StringStubIndexExtension<JetFqNamedDeclaration>) getIndexForTopLevelPropertyOrFunction(decompiledDeclaration);
         return index.get(memberFqName.asString(), decompiledDeclaration.getProject(), librarySourcesScope);
     }
 
-    private static StringStubIndexExtension<? extends JetNamedDeclaration> getIndexForTopLevelPropertyOrFunction(
-            @NotNull JetNamedDeclaration decompiledDeclaration
+    private static StringStubIndexExtension<? extends JetFqNamedDeclaration> getIndexForTopLevelPropertyOrFunction(
+            @NotNull JetFqNamedDeclaration decompiledDeclaration
     ) {
         if (decompiledDeclaration instanceof JetNamedFunction) {
             return JetTopLevelFunctionsFqnNameIndex.getInstance();
@@ -290,53 +290,53 @@ public class JetSourceNavigationHelper {
     }
 
     @NotNull
-    private static List<JetNamedDeclaration> getInitialMemberCandidates(
+    private static List<JetFqNamedDeclaration> getInitialMemberCandidates(
             @NotNull JetClassOrObject sourceClassOrObject,
             @NotNull final Name name,
-            @NotNull Class<JetNamedDeclaration> declarationClass
+            @NotNull Class<JetFqNamedDeclaration> declarationClass
     ) {
-        List<JetNamedDeclaration> allByClass = ContainerUtil.findAll(sourceClassOrObject.getDeclarations(), declarationClass);
-        return ContainerUtil.filter(allByClass, new Condition<JetNamedDeclaration>() {
+        List<JetFqNamedDeclaration> allByClass = ContainerUtil.findAll(sourceClassOrObject.getDeclarations(), declarationClass);
+        return ContainerUtil.filter(allByClass, new Condition<JetFqNamedDeclaration>() {
             @Override
-            public boolean value(JetNamedDeclaration declaration) {
+            public boolean value(JetFqNamedDeclaration declaration) {
                 return name.equals(declaration.getNameAsSafeName());
             }
         });
     }
 
     @NotNull
-    private static List<JetNamedDeclaration> filterByReceiverPresenceAndParametersCount(
-            final @NotNull JetNamedDeclaration decompiledDeclaration,
-            @NotNull Collection<JetNamedDeclaration> candidates
+    private static List<JetFqNamedDeclaration> filterByReceiverPresenceAndParametersCount(
+            final @NotNull JetFqNamedDeclaration decompiledDeclaration,
+            @NotNull Collection<JetFqNamedDeclaration> candidates
     ) {
-        return ContainerUtil.filter(candidates, new Condition<JetNamedDeclaration>() {
+        return ContainerUtil.filter(candidates, new Condition<JetFqNamedDeclaration>() {
             @Override
-            public boolean value(JetNamedDeclaration candidate) {
+            public boolean value(JetFqNamedDeclaration candidate) {
                 return sameReceiverPresenceAndParametersCount(candidate, decompiledDeclaration);
             }
         });
     }
 
     @NotNull
-    private static List<JetNamedDeclaration> filterByReceiverAndParameterTypes(
-            final @NotNull JetNamedDeclaration decompiledDeclaration,
-            @NotNull Collection<JetNamedDeclaration> candidates
+    private static List<JetFqNamedDeclaration> filterByReceiverAndParameterTypes(
+            final @NotNull JetFqNamedDeclaration decompiledDeclaration,
+            @NotNull Collection<JetFqNamedDeclaration> candidates
     ) {
-        return ContainerUtil.filter(candidates, new Condition<JetNamedDeclaration>() {
+        return ContainerUtil.filter(candidates, new Condition<JetFqNamedDeclaration>() {
             @Override
-            public boolean value(JetNamedDeclaration candidate) {
+            public boolean value(JetFqNamedDeclaration candidate) {
                 return receiverAndParametersShortTypesMatch(candidate, decompiledDeclaration);
             }
         });
     }
 
     @Nullable
-    public static JetNamedDeclaration getSourceProperty(@NotNull JetProperty decompiledProperty) {
+    public static JetFqNamedDeclaration getSourceProperty(@NotNull JetProperty decompiledProperty) {
         return getSourcePropertyOrFunction(decompiledProperty);
     }
 
     @Nullable
-    public static JetNamedDeclaration getSourceFunction(@NotNull JetNamedFunction decompiledFunction) {
+    public static JetFqNamedDeclaration getSourceFunction(@NotNull JetNamedFunction decompiledFunction) {
         return getSourcePropertyOrFunction(decompiledFunction);
     }
 
@@ -401,7 +401,7 @@ public class JetSourceNavigationHelper {
                 List<OrderEntry> entries = idx.getOrderEntriesForFile(file);
                 //noinspection ForLoopReplaceableByForEach
                 for (int i = 0; i < entries.size(); i++) {
-                    final OrderEntry entry = entries.get(i);
+                    OrderEntry entry = entries.get(i);
                     if (orderEntries.contains(entry)) return true;
                 }
                 return false;
