@@ -24,10 +24,10 @@ import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ui.configuration.libraryEditor.NewLibraryEditor;
-import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl;
+import junit.framework.Assert;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.cli.common.ExitCode;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
@@ -36,36 +36,22 @@ import org.jetbrains.jet.codegen.forTestCompile.ForTestPackJdkAnnotations;
 import org.jetbrains.jet.plugin.PluginTestCaseBase;
 import org.jetbrains.jet.plugin.project.TargetPlatform;
 import org.jetbrains.jet.testing.ConfigLibraryUtil;
-import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
 
 public abstract class AbstractJavaWithLibCompletionTest extends JetFixtureCompletionBaseTestCase {
     public void doTestWithJar(String testPath) throws IOException {
+
+        File jarDependency = getOrCompileJarDependency(testPath);
+        assert jarDependency.exists() : "Library file should exist: " + jarDependency.getAbsolutePath();
         NewLibraryEditor editor = new NewLibraryEditor();
         editor.setName("doTestWithJarLib");
+        editor.addRoot(VfsUtil.getUrlForLibraryRoot(jarDependency), OrderRootType.CLASSES);
 
-        File fullDirectoryPath = new File(testPath).getParentFile();
-        String jarLibName = getTestName(false) + ".jar";
-        File sourcesDir = new File(fullDirectoryPath, getTestName(true) + "Sources");
-
-        File tempDir = FileUtil.createTempDirectory("compilerTest", "compilerTest");
-        File jarFile = new File(tempDir, jarLibName);
-        try {
-            compileJarDependency(sourcesDir, jarFile);
-            assert jarFile.exists() : "Library file should exist: " + jarFile.getAbsolutePath();
-
-            editor.addRoot(VfsUtil.getUrlForLibraryRoot(jarFile), OrderRootType.CLASSES);
-
-            ConfigLibraryUtil.configureLibrary(myModule, getProjectDescriptor().getSdk(), editor);
-            CodeInsightTestFixtureImpl.ensureIndexesUpToDate(getProject());
-
-            doTest(testPath);
-        }
-        finally {
-            FileUtil.delete(tempDir);
-        }
+        ConfigLibraryUtil.configureLibrary(myModule, getProjectDescriptor().getSdk(), editor);
+        CodeInsightTestFixtureImpl.ensureIndexesUpToDate(getProject());
+        doTest(testPath);
     }
 
     @NotNull
@@ -94,7 +80,21 @@ public abstract class AbstractJavaWithLibCompletionTest extends JetFixtureComple
         return TargetPlatform.JVM;
     }
 
-    private static void compileJarDependency(@NotNull File sourcesDir, @NotNull File outputFile) throws IOException {
+    //NOTE: you can just delete existing jar to recompile data for tests that have kotlin dependency
+    @NotNull
+    private File getOrCompileJarDependency(@NotNull String testPath) throws IOException {
+        File fullDirectoryPath = new File(testPath).getParentFile();
+        String jarLibName = getTestName(false) + ".jar";
+        File jarFile = new File(fullDirectoryPath, jarLibName);
+        if (jarFile.exists()) {
+            return jarFile;
+        }
+        compileDependencySources(jarFile, fullDirectoryPath);
+        return jarFile;
+    }
+
+    private void compileDependencySources(@NotNull File outputFile, @NotNull File fullDirectoryPath) {
+        File sourcesDir = new File(fullDirectoryPath, getTestName(true) + "Sources");
         File stdlib = ForTestCompileRuntime.runtimeJarForTests();
         File jdkAnnotations = ForTestPackJdkAnnotations.jdkAnnotationsForTests();
         ExitCode rv = new K2JVMCompiler().exec(System.out,
