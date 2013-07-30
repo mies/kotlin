@@ -36,6 +36,11 @@ public class JetJavaLibCompletionTestGenerated extends AbstractJavaWithLibComple
         JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/completion/basic/custom"), Pattern.compile("^(.+)\\.kt$"), false);
     }
     
+    @TestMetadata("NonImportedJavaClass.kt")
+    public void testNonImportedJavaClass() throws Exception {
+        doTestWithJar("idea/testData/completion/basic/custom/NonImportedJavaClass.kt");
+    }
+    
     @TestMetadata("TopLevelNonImportedExtFun.kt")
     public void testTopLevelNonImportedExtFun() throws Exception {
         doTestWithJar("idea/testData/completion/basic/custom/TopLevelNonImportedExtFun.kt");

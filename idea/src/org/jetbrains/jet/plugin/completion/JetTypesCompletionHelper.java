@@ -24,13 +24,8 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.asJava.KotlinLightClass;
-import org.jetbrains.jet.lang.descriptors.ClassKind;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
-import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
-import org.jetbrains.jet.plugin.caches.JetFromJavaDescriptorHelper;
 import org.jetbrains.jet.plugin.caches.JetShortNamesCache;
 import org.jetbrains.jet.plugin.framework.KotlinFrameworkDetector;
 
@@ -74,9 +69,8 @@ public class JetTypesCompletionHelper {
                     public void consume(LookupElement lookupElement) {
                         if (lookupElement instanceof JavaPsiClassReferenceElement) {
                             JavaPsiClassReferenceElement javaPsiReferenceElement = (JavaPsiClassReferenceElement) lookupElement;
-
                             PsiClass psiClass = javaPsiReferenceElement.getObject();
-                            if (addJavaClassAsJetLookupElement(psiClass, jetCompletionResult)) {
+                            if (psiClass instanceof KotlinLightClass) {
                                 return;
                             }
 
@@ -84,27 +78,5 @@ public class JetTypesCompletionHelper {
                         }
                     }
                 });
-    }
-
-    private static boolean addJavaClassAsJetLookupElement(PsiClass aClass, JetCompletionResultSet jetCompletionResult) {
-        if (aClass instanceof KotlinLightClass) {
-            // Do nothing. Kotlin not-compiled class should have already been added as kotlin element before.
-            return true;
-        }
-
-        if (DescriptorResolverUtils.isCompiledKotlinClass(aClass)) {
-            if (JetFromJavaDescriptorHelper.getCompiledClassKind(aClass) != ClassKind.CLASS_OBJECT) {
-                String qualifiedName = aClass.getQualifiedName();
-                if (qualifiedName != null) {
-                    FqName fqName = new FqName(qualifiedName);
-                    jetCompletionResult.addAllElements(
-                            ResolveSessionUtils.getClassDescriptorsByFqName(jetCompletionResult.getResolveSession(), fqName));
-                }
-            }
-
-            return true;
-        }
-
-        return false;
     }
 }
