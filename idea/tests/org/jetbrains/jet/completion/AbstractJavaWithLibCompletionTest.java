@@ -94,7 +94,7 @@ public abstract class AbstractJavaWithLibCompletionTest extends JetFixtureComple
     }
 
     private void compileDependencySources(@NotNull File outputFile, @NotNull File fullDirectoryPath) {
-        File sourcesDir = new File(fullDirectoryPath, getTestName(true) + "Sources");
+        File sourcesDir = new File(fullDirectoryPath, getTestName(true) + "Src");
         File stdlib = ForTestCompileRuntime.runtimeJarForTests();
         File jdkAnnotations = ForTestPackJdkAnnotations.jdkAnnotationsForTests();
         ExitCode rv = new K2JVMCompiler().exec(System.out,
