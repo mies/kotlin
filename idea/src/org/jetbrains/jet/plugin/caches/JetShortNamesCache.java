@@ -38,9 +38,9 @@ import org.jetbrains.jet.lang.resolve.lazy.KotlinCodeAnalyzer;
 import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.jet.plugin.caches.resolve.IDELightClassGenerationSupport;
+import org.jetbrains.jet.plugin.stubindex.JetClassShortNameIndex;
 import org.jetbrains.jet.plugin.stubindex.JetFullClassNameIndex;
-import org.jetbrains.jet.plugin.stubindex.JetShortClassNameIndex;
-import org.jetbrains.jet.plugin.stubindex.JetShortFunctionNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetTopLevelNonExtensionFunctionShortNameIndex;
 
 import java.util.*;
 
@@ -74,7 +74,7 @@ public class JetShortNamesCache extends PsiShortNamesCache {
     @NotNull
     @Override
     public String[] getAllClassNames() {
-        Collection<String> classNames = JetShortClassNameIndex.getInstance().getAllKeys(project);
+        Collection<String> classNames = JetClassShortNameIndex.getInstance().getAllKeys(project);
 
         // .namespace classes can not be indexed, since they have no explicit declarations
         IDELightClassGenerationSupport lightClassGenerationSupport = IDELightClassGenerationSupport.getInstanceForIDE(project);
@@ -108,7 +108,7 @@ public class JetShortNamesCache extends PsiShortNamesCache {
         }
 
         // Quick check for classes from getAllClassNames()
-        Collection<JetClassOrObject> classOrObjects = JetShortClassNameIndex.getInstance().get(name, project, scope);
+        Collection<JetClassOrObject> classOrObjects = JetClassShortNameIndex.getInstance().get(name, project, scope);
         if (classOrObjects.isEmpty()) {
             return result.toArray(new PsiClass[result.size()]);
         }
@@ -200,7 +200,7 @@ public class JetShortNamesCache extends PsiShortNamesCache {
 
     @Override
     public void getAllMethodNames(@NotNull HashSet<String> set) {
-        set.addAll(JetShortFunctionNameIndex.getInstance().getAllKeys(project));
+        set.addAll(JetTopLevelNonExtensionFunctionShortNameIndex.getInstance().getAllKeys(project));
     }
 
     @NotNull

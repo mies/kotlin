@@ -51,7 +51,6 @@ import java.util.Collection;
 import java.util.Set;
 
 import static org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils.getClassOrObjectDescriptorsByFqName;
-import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getTopLevelObjectFqNames;
 
 import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.*;
 

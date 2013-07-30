@@ -25,9 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.psi.JetNamedDeclaration;
 import org.jetbrains.jet.lang.psi.JetPsiUtil;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.plugin.stubindex.JetExtensionFunctionNameIndex;
-import org.jetbrains.jet.plugin.stubindex.JetShortFunctionNameIndex;
-import org.jetbrains.jet.plugin.stubindex.JetTopLevelShortObjectNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetTopLevelExtensionFunctionShortNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetTopLevelNonExtensionFunctionShortNameIndex;
+import org.jetbrains.jet.plugin.stubindex.JetTopLevelObjectShortNameIndex;
 
 import java.util.Collection;
 import java.util.Set;
@@ -39,16 +39,16 @@ public final class TopLevelDeclarationIndexUtils {
             @NotNull GlobalSearchScope searchScope
     ) {
         return getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(acceptedShortNameCondition, searchScope,
-                                                                     JetExtensionFunctionNameIndex.getInstance());
+                                                                     JetTopLevelExtensionFunctionShortNameIndex.getInstance());
     }
 
     @NotNull
-    public static Collection<FqName> getTopLevelFunctionFqNames(
+    public static Collection<FqName> getTopLevelNonExtensionFunctionFqNames(
             @NotNull Condition<String> acceptedShortNameCondition,
             @NotNull GlobalSearchScope searchScope
     ) {
         return getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(acceptedShortNameCondition, searchScope,
-                                                                     JetShortFunctionNameIndex.getInstance());
+                                                                     JetTopLevelNonExtensionFunctionShortNameIndex.getInstance());
     }
 
     @NotNull
@@ -57,7 +57,7 @@ public final class TopLevelDeclarationIndexUtils {
             @NotNull GlobalSearchScope searchScope
     ) {
         return getAllTopLevelEntitiesFqNamesByNameConditionFromIndex(acceptedShortNameCondition, searchScope,
-                                                                     JetTopLevelShortObjectNameIndex.getInstance());
+                                                                     JetTopLevelObjectShortNameIndex.getInstance());
     }
 
     @NotNull

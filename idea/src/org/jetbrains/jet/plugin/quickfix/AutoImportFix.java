@@ -60,7 +60,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getExtensionFunctionFqNames;
-import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getTopLevelFunctionFqNames;
+import static org.jetbrains.jet.plugin.caches.TopLevelDeclarationIndexUtils.getTopLevelNonExtensionFunctionFqNames;
 
 /**
  * Check possibility and perform fix for unresolved references.
@@ -92,7 +92,7 @@ public class AutoImportFix extends JetHintAction<JetSimpleNameExpression> implem
         if (!isSuppressedTopLevelImportInPosition(element)) {
             ResolveSession resolveSession = WholeProjectAnalyzerFacade.getLazyResolveSessionForFile((JetFile) element.getContainingFile());
             result.addAll(getClassNames(element.getReferencedName(), (JetFile) file, resolveSession));
-            result.addAll(getTopLevelFunctionFqNames(acceptedTopLevelImports, scope));
+            result.addAll(getTopLevelNonExtensionFunctionFqNames(acceptedTopLevelImports, scope));
         }
         result.addAll(getExtensionFunctionFqNames(acceptedTopLevelImports, scope));
 
