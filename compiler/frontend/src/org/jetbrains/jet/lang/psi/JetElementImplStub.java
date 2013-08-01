@@ -46,7 +46,7 @@ public class JetElementImplStub<T extends StubElement> extends StubBasedPsiEleme
 
     @Override
     public String toString() {
-        return getClass().getSimpleName();
+        return getElementType().toString();
     }
 
     @Override
