@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.resolve.java.vfilefinder.VirtualFileFinder;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 
-import javax.jnlp.ServiceManager;
 import java.util.Collection;
 
 public final class IDEVirtualFileFinder implements VirtualFileFinder {

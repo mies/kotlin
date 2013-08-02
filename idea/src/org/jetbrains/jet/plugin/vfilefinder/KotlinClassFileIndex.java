@@ -62,6 +62,7 @@ public final class KotlinClassFileIndex extends ScalarIndexExtension<FqName> {
                 KotlinClassFileHeader header = KotlinClassFileHeader.readKotlinHeaderFromClassFile(inputData.getFile());
                 if (header.getType() != KotlinClassFileHeader.HeaderType.NONE) {
                     HashMap<FqName, Void> result = new HashMap<FqName, Void>();
+                    //TODO: singleton map
                     FqName fqName = header.getJvmClassName().getFqName();
                     result.put(fqName, null);
                     return result;

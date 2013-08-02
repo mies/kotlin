@@ -19,6 +19,7 @@ public class KotlinFileViewProviderFactory implements FileViewProviderFactory {
         if (language != JetLanguage.INSTANCE) {
             return null;
         }
+        //TODO:
         if (JetContentBasedFileSubstitutor.isKotlinCompiledFile(file)) {
             return new SingleRootFileViewProvider(manager, file, physical) {
                 @NotNull
