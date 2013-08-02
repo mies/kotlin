@@ -50,11 +50,11 @@ public class PsiJetPropertyStubImpl extends StubBase<JetProperty> implements Psi
     }
 
     public PsiJetPropertyStubImpl(IStubElementType elementType, StubElement parent, String name,
-            boolean isVal, boolean isTopLevel, @Nullable FqName fqName,
+            boolean isVar, boolean isTopLevel, @Nullable FqName fqName,
             String typeText, String inferenceBodyText
     ) {
         this(elementType, parent, StringRef.fromString(name),
-             isVal, isTopLevel, fqName, StringRef.fromString(typeText), StringRef.fromString(inferenceBodyText));
+             isVar, isTopLevel, fqName, StringRef.fromString(typeText), StringRef.fromString(inferenceBodyText));
     }
 
     @Override
