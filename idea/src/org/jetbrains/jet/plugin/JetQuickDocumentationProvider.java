@@ -87,7 +87,7 @@ public class JetQuickDocumentationProvider extends AbstractDocumentationProvider
             @NotNull DeclarationDescriptor declarationDescriptor, @NotNull BindingContext bindingContext,
             PsiElement element, PsiElement originalElement, boolean mergeKotlinAndJava) {
         String renderedDecl = DescriptorRenderer.HTML.render(declarationDescriptor);
-        if (isKotlinDeclaration(declarationDescriptor, bindingContext, originalElement.getProject())) {
+        if (element.getLanguage() == JetLanguage.INSTANCE) {
             KDoc comment = findElementKDoc(element);
             if (comment != null) {
                 renderedDecl = renderedDecl + "<br/>" + kDocToHtml(comment);
@@ -113,11 +113,7 @@ public class JetQuickDocumentationProvider extends AbstractDocumentationProvider
             Collection<PsiElement> elements = libraryReferenceResolver.resolveStandardLibrarySymbol(descriptor);
             return !elements.isEmpty();
         }
-
-        if (JetLanguage.INSTANCE == declaration.getLanguage()) return true;
-        ClsClassImpl clsClass = PsiTreeUtil.getParentOfType(declaration, ClsClassImpl.class);
-        if (clsClass == null) return false;
-        return JetDecompiledData.isKotlinFile((ClsFileImpl) clsClass.getContainingFile());
+        return JetLanguage.INSTANCE == declaration.getLanguage();
     }
 
     @Override

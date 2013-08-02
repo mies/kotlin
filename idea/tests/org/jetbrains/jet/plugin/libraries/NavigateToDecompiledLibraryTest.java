@@ -22,9 +22,9 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.impl.compiled.ClsElementImpl;
-import com.intellij.psi.impl.compiled.ClsFileImpl;
 import org.jetbrains.jet.lang.psi.JetDeclaration;
+import org.jetbrains.jet.lang.psi.JetFile;
+import org.junit.Assert;
 
 import java.util.Map;
 
@@ -77,15 +77,19 @@ public class NavigateToDecompiledLibraryTest extends AbstractNavigateToLibraryTe
 
     private void doTest() {
         classFile = getClassFile();
-
-        Map<ClsElementImpl, JetDeclaration> map = getDecompiledData(classFile).getClsElementsToJetElements();
-        checkNavigationElements(map);
+        PsiFile classPsiFile = getPsiManager().findFile(classFile);
+        Assert.assertTrue(classPsiFile instanceof JetFile);
+        Map<String, JetDeclaration> map = JetDecompiledData.getDecompiledData(classFile, getProject())
+                .getRenderedDescriptorToKotlinPsiMap((JetFile) classPsiFile);
+        for (Map.Entry<String, JetDeclaration> clsToJet : map.entrySet()) {
+            assertSame(classPsiFile, clsToJet.getValue().getContainingFile());
+        }
         String decompiledTextWithMarks = getDecompiledTextWithMarks(map);
 
         assertSameLinesWithFile(TEST_DATA_PATH + "/decompiled/" + getTestName(false) + ".kt", decompiledTextWithMarks);
     }
 
-    private String getDecompiledTextWithMarks(Map<ClsElementImpl, JetDeclaration> map) {
+    private String getDecompiledTextWithMarks(Map<String, JetDeclaration> map) {
         String decompiledText = getDecompiledText();
 
         int[] openings = new int[decompiledText.length() + 1];
@@ -111,21 +115,6 @@ public class NavigateToDecompiledLibraryTest extends AbstractNavigateToLibraryTe
         Document document = FileDocumentManager.getInstance().getDocument(classFile);
         assertNotNull(document);
         return document.getText();
-    }
-
-    private JetDecompiledData getDecompiledData(VirtualFile classFile) {
-        PsiFile classPsiFile = getPsiManager().findFile(classFile);
-        assertInstanceOf(classPsiFile, ClsFileImpl.class);
-        ClsFileImpl clsFile = (ClsFileImpl) classPsiFile;
-        return JetDecompiledData.getDecompiledData(clsFile);
-    }
-
-    private void checkNavigationElements(Map<ClsElementImpl, JetDeclaration> map) {
-        PsiFile classPsiFile = getPsiManager().findFile(classFile);
-        for (Map.Entry<ClsElementImpl, JetDeclaration> clsToJet : map.entrySet()) {
-            assertSame(classPsiFile, clsToJet.getKey().getContainingFile());
-            assertSame(clsToJet.getValue(), clsToJet.getKey().getNavigationElement());
-        }
     }
 
     private VirtualFile getClassFile() {

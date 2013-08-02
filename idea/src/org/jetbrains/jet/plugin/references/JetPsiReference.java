@@ -25,10 +25,12 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.psi.JetDeclaration;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetReferenceExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.plugin.libraries.NavigationProviderForDecompiledKotlin;
 import org.jetbrains.jet.plugin.project.WholeProjectAnalyzerFacade;
 
 import java.util.ArrayList;
@@ -110,6 +112,14 @@ public abstract class JetPsiReference implements PsiPolyVariantReference {
         }
         if (psiElements.size() > 1) {
             return null;
+        }
+        DeclarationDescriptor referencedDescriptor = bindingContext.get(BindingContext.REFERENCE_TARGET, myExpression);
+        if (referencedDescriptor != null) {
+            JetDeclaration declarationInDecompiledFile =
+                    NavigationProviderForDecompiledKotlin.provideDeclarationForReference(myExpression, referencedDescriptor);
+            if (declarationInDecompiledFile != null) {
+                return declarationInDecompiledFile;
+            }
         }
         Collection<PsiElement> stdlibSymbols = resolveStandardLibrarySymbol(bindingContext);
         if (stdlibSymbols.size() == 1) {

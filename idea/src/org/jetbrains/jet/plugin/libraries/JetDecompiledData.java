@@ -16,85 +16,75 @@
 
 package org.jetbrains.jet.plugin.libraries;
 
-import com.intellij.ide.highlighter.JavaClassFileType;
-import com.intellij.openapi.fileTypes.FileTypeManager;
+import com.beust.jcommander.internal.Maps;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.impl.compiled.ClsElementImpl;
-import com.intellij.psi.impl.compiled.ClsFileImpl;
+import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.psi.JetDeclaration;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.resolve.java.DescriptorResolverUtils;
 
 import java.util.Map;
 
 @SuppressWarnings("FieldAccessedSynchronizedAndUnsynchronized")
 public class JetDecompiledData {
-    private final JetFile jetFile;
-    private final Map<ClsElementImpl, JetDeclaration> clsElementsToJetElements;
 
-    private static final Object LOCK = new String("decompiled data lock");
     private static final Key<JetDecompiledData> USER_DATA_KEY = new Key<JetDecompiledData>("USER_DATA_KEY");
+    private static final Object LOCK = new String("decompiled data lock");
 
-    JetDecompiledData(JetFile jetFile, Map<ClsElementImpl, JetDeclaration> clsElementJetDeclarationMap) {
-        this.jetFile = jetFile;
-        clsElementsToJetElements = clsElementJetDeclarationMap;
+    @NotNull
+    private final String fileText;
+    @NotNull
+    private final Map<String, TextRange> renderedDescriptorsToRanges;
+
+    JetDecompiledData(@NotNull String fileText, @NotNull Map<String,TextRange> renderedDescriptorsToRanges) {
+        this.fileText = fileText;
+        this.renderedDescriptorsToRanges = renderedDescriptorsToRanges;
     }
 
     @NotNull
-    public JetFile getJetFile() {
-        return jetFile;
-    }
-
-    public JetDeclaration getJetDeclarationByClsElement(ClsElementImpl clsElement) {
-        return clsElementsToJetElements.get(clsElement);
-    }
-
-    @Nullable
-    public static ClsFileImpl getClsFile(@NotNull Project project, @NotNull VirtualFile vFile) {
-        if (!FileTypeManager.getInstance().isFileOfType(vFile, JavaClassFileType.INSTANCE)) {
-            return null;
-        }
-        PsiFile psiFile = PsiManager.getInstance(project).findFile(vFile);
-        if (!(psiFile instanceof ClsFileImpl)) {
-            return null;
-        }
-        ClsFileImpl clsFile = (ClsFileImpl) psiFile;
-        if (clsFile.getClasses().length != 1) {
-            return null;
-        }
-        return clsFile;
-    }
-
-    public static boolean isKotlinFile(@NotNull Project project, @NotNull VirtualFile vFile) {
-        ClsFileImpl clsFile = getClsFile(project, vFile);
-        return clsFile != null && isKotlinFile(clsFile);
-    }
-
-    public static boolean isKotlinFile(@NotNull ClsFileImpl clsFile) {
-        return DescriptorResolverUtils.isCompiledKotlinClassOrPackageClass(clsFile.getClasses()[0]);
+    public String getFileText() {
+        return fileText;
     }
 
     @NotNull
-    public static JetDecompiledData getDecompiledData(@NotNull ClsFileImpl clsFile) {
+    public static JetDecompiledData getDecompiledData(@NotNull VirtualFile virtualFile, @NotNull Project project) {
         synchronized (LOCK) {
-            if (clsFile.getUserData(USER_DATA_KEY) == null) {
-                clsFile.putUserData(USER_DATA_KEY, DecompiledDataFactory.createDecompiledData(clsFile));
+            if (virtualFile.getUserData(USER_DATA_KEY) == null) {
+                virtualFile.putUserData(USER_DATA_KEY, DecompiledDataFactory.createDecompiledData(virtualFile, project));
             }
-            JetDecompiledData decompiledData = clsFile.getUserData(USER_DATA_KEY);
+            JetDecompiledData decompiledData = virtualFile.getUserData(USER_DATA_KEY);
             assert decompiledData != null;
             return decompiledData;
         }
     }
 
     @TestOnly
-    Map<ClsElementImpl, JetDeclaration> getClsElementsToJetElements() {
-        return clsElementsToJetElements;
+    @NotNull
+    public Map<String, JetDeclaration> getRenderedDescriptorToKotlinPsiMap(@NotNull JetFile file) {
+        Map<String, JetDeclaration> renderedDescriptorsToJetDeclarations = Maps.newHashMap();
+        for (Map.Entry<String, TextRange> renderedDescriptorToRange : renderedDescriptorsToRanges.entrySet()) {
+            String renderedDescriptor = renderedDescriptorToRange.getKey();
+            TextRange range = renderedDescriptorToRange.getValue();
+            JetDeclaration jetDeclaration = PsiTreeUtil.findElementOfClassAtRange(file, range.getStartOffset(), range.getEndOffset(),
+                                                                                  JetDeclaration.class);
+            assert jetDeclaration != null : "Can't find declaration at " + range + ": "
+                                            + file.getText().substring(range.getStartOffset(), range.getEndOffset());
+            renderedDescriptorsToJetDeclarations.put(renderedDescriptor, jetDeclaration);
+        }
+        return renderedDescriptorsToJetDeclarations;
+    }
+
+    @Nullable
+    public JetDeclaration getDeclarationForDescriptor(@NotNull JetFile file, @NotNull DeclarationDescriptor descriptor) {
+        String key = DecompiledDataFactory.DESCRIPTOR_RENDERER.render(descriptor);
+        return getRenderedDescriptorToKotlinPsiMap(file).get(key);
     }
 }

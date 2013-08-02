@@ -60,8 +60,7 @@ public class JetContentBasedFileSubstitutor implements ContentBasedClassFileProc
     @NotNull
     @Override
     public String obtainFileText(Project project, VirtualFile file) {
-        //TODO: decompiled
-        return "";
+        return JetDecompiledData.getDecompiledData(file, project).getFileText();
     }
 
     @Override

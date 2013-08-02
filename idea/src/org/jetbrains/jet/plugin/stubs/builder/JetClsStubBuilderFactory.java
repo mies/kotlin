@@ -16,7 +16,9 @@ public class JetClsStubBuilderFactory extends ClsStubBuilderFactory<JetFile> {
         if (header.getType() == KotlinClassFileHeader.HeaderType.PACKAGE) {
             return new CompiledPackageClassStubBuilder(header).createStub();
         }
-        //TODO: CompiledClassStubBuilderFactory
+        if (header.getType() == KotlinClassFileHeader.HeaderType.CLASS) {
+            return new CompiledClassStubBuilder(header).createStub();
+        }
         return null;
     }
 
