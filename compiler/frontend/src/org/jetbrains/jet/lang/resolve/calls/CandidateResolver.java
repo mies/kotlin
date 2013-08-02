@@ -48,6 +48,7 @@ import org.jetbrains.jet.lang.types.checker.JetTypeChecker;
 import org.jetbrains.jet.lang.types.expressions.DataFlowUtils;
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingUtils;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
+import org.jetbrains.jet.lexer.JetTokens;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -367,7 +368,7 @@ public class CandidateResolver {
             type = completeNestedCallsInference(contextForArgument);
             checkValueArgumentTypes(contextForArgument);
         }
-        BindingContextUtils.updateRecordedType(type, expression, context.trace);
+        BindingContextUtils.updateRecordedType(type, expression, context.trace, isSafeCallExpression(expression, context.trace));
         DataFlowUtils.checkType(type, expression, contextForArgument);
     }
 
@@ -388,6 +389,38 @@ public class CandidateResolver {
         return expression.accept(selectorExpressionFinder, null);
     }
 
+    private boolean isSafeCallExpression(@NotNull JetExpression expression, final @NotNull BindingTrace trace) {
+
+        // a?.foo() - result type should be made nullable if type of a is nullable
+        // a?.b!!.foo() - result type shouldn't be made nullable
+        JetVisitor<Boolean, Boolean> isSafeCallExpressionVisitor = new JetVisitor<Boolean, Boolean>() {
+            @Override
+            public Boolean visitSafeQualifiedExpression(JetSafeQualifiedExpression expression, Boolean isSafeCall) {
+                JetType type = trace.get(BindingContext.EXPRESSION_TYPE, expression.getSelectorExpression());
+                return visitQualifiedExpression(expression, type != null && type.isNullable());
+            }
+
+            @Override
+            public Boolean visitQualifiedExpression(JetQualifiedExpression expression, Boolean isSafeCall) {
+                JetExpression selector = expression.getSelectorExpression();
+                if (selector == null) return isSafeCall;
+
+                if (selector instanceof JetPostfixExpression
+                    && ((JetPostfixExpression) selector).getOperationReference().getReferencedNameElementType() == JetTokens.EXCLEXCL) {
+                    return selector.accept(this, false);
+                }
+                return selector.accept(this, isSafeCall);
+            }
+
+            @Override
+            public Boolean visitExpression(JetExpression expression, Boolean isSafeCall) {
+                return isSafeCall;
+            }
+        };
+        return expression.accept(isSafeCallExpressionVisitor, false);
+    }
+
+
     @Nullable
     private <D extends CallableDescriptor> JetType updateResultArgumentTypeIfNotDenotable(
             @NotNull CallCandidateResolutionContext<D> context,
@@ -398,7 +431,7 @@ public class CandidateResolver {
             if (type.getConstructor() instanceof NumberValueTypeConstructor) {
                 NumberValueTypeConstructor constructor = (NumberValueTypeConstructor) type.getConstructor();
                 type = TypeUtils.getPrimitiveNumberType(constructor, context.expectedType);
-                BindingContextUtils.updateRecordedType(type, expression, context.trace);
+                BindingContextUtils.updateRecordedType(type, expression, context.trace, false);
             }
         }
         return type;
@@ -537,8 +570,8 @@ public class CandidateResolver {
             constraintSystem.addSubtypeConstraint(receiverType, receiverParameter.getType(), ConstraintPosition.RECEIVER_POSITION);
         }
 
-        ConstraintSystem
-                constraintSystemWithRightTypeParameters = constraintSystem.replaceTypeVariables(new Function<TypeParameterDescriptor, TypeParameterDescriptor>() {
+        ConstraintSystem constraintSystemWithRightTypeParameters = constraintSystem.replaceTypeVariables(
+                new Function<TypeParameterDescriptor, TypeParameterDescriptor>() {
             @Override
             public TypeParameterDescriptor apply(@Nullable TypeParameterDescriptor typeParameterDescriptor) {
                 assert typeParameterDescriptor != null;
