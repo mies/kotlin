@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.JetLanguage;
-import org.jetbrains.jet.plugin.libraries.JetContentBasedFileSubstitutor;
+import org.jetbrains.jet.plugin.libraries.DecompiledUtils;
 
 public class KotlinFileViewProviderFactory implements FileViewProviderFactory {
     @Override
@@ -19,7 +19,7 @@ public class KotlinFileViewProviderFactory implements FileViewProviderFactory {
         if (language != JetLanguage.INSTANCE) {
             return null;
         }
-        if (JetContentBasedFileSubstitutor.isKotlinCompiledFile(file)) {
+        if (DecompiledUtils.isKotlinCompiledFile(file)) {
             return new SingleRootFileViewProvider(manager, file, physical) {
                 @NotNull
                 @Override
