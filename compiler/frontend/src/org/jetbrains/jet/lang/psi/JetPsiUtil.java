@@ -158,8 +158,7 @@ public class JetPsiUtil {
 
     @NotNull
     public static FqName getFQName(@NotNull JetFile file) {
-        FqName header = file.getNamespaceFqName();
-        return header != null ? header : FqName.ROOT;
+        return file.getNamespaceFqName();
     }
 
     //NOTE: use JetFqNamedDeclaration#getFqName()

@@ -43,7 +43,7 @@ public class ScriptNameUtil {
         }
         name = Character.toUpperCase(name.charAt(0)) + (name.length() == 0 ? "" : name.substring(1));
         FqName fqName = file.getNamespaceFqName();
-        if(fqName != null && fqName.asString().length() > 0) {
+        if (fqName.asString().length() > 0) {
             name = fqName.asString().replace('.','/') + "/" + name;
         }
         return name;

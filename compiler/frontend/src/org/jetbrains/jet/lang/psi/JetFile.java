@@ -108,11 +108,10 @@ public class JetFile extends PsiFileBase implements JetDeclarationContainer, Jet
         return header != null ? header.getQualifiedName() : null;
     }
 
-    @Nullable
+    @NotNull
     public FqName getNamespaceFqName() {
         String fqNameAsString = getNamespaceFqNameAsString();
-        //TODO: may be root?
-        return fqNameAsString != null ? new FqName(fqNameAsString) : null;
+        return fqNameAsString != null ? new FqName(fqNameAsString) : FqName.ROOT;
     }
 
     @Nullable
