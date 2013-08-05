@@ -65,7 +65,7 @@ public abstract class AbstractLazyResolveDescriptorRendererTest extends KotlinTe
             @Override
             public void visitJetFile(JetFile file) {
                 FqName fqName = file.getNamespaceFqName();
-                if (fqName != null) {
+                if (!fqName.isRoot()) {
                     NamespaceDescriptor packageDescriptor = resolveSession.getPackageDescriptorByFqName(fqName);
                     descriptors.add(packageDescriptor);
                 }
