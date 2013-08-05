@@ -73,9 +73,9 @@ public final class KotlinClassFileHeader {
         return type;
     }
 
-    @SuppressWarnings({"ConstantConditions", "NullableProblems"})
     @NotNull
     public JvmClassName getJvmClassName() {
+        assert jvmClassName != null;
         return jvmClassName;
     }
 
