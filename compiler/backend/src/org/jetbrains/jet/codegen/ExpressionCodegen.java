@@ -51,8 +51,12 @@ import org.jetbrains.jet.lang.resolve.calls.model.*;
 import org.jetbrains.jet.lang.resolve.calls.util.CallMaker;
 import org.jetbrains.jet.lang.resolve.calls.util.ExpressionAsFunctionDescriptor;
 import org.jetbrains.jet.lang.resolve.constants.CompileTimeConstant;
-import org.jetbrains.jet.lang.resolve.java.*;
+import org.jetbrains.jet.lang.resolve.java.AsmTypeConstants;
+import org.jetbrains.jet.lang.resolve.java.JvmAbi;
+import org.jetbrains.jet.lang.resolve.java.JvmClassName;
+import org.jetbrains.jet.lang.resolve.java.JvmPrimitiveType;
 import org.jetbrains.jet.lang.resolve.java.descriptor.ClassDescriptorFromJvmBytecode;
+import org.jetbrains.jet.lang.resolve.java.descriptor.SamConstructorDescriptor;
 import org.jetbrains.jet.lang.resolve.name.Name;
 import org.jetbrains.jet.lang.resolve.scopes.receivers.*;
 import org.jetbrains.jet.lang.types.JetType;
@@ -1873,13 +1877,8 @@ public class ExpressionCodegen extends JetVisitor<StackValue, StackValue> implem
             return invokeFunction(call, receiver, functionCall);
         }
 
-        if (funDescriptor instanceof SimpleFunctionDescriptor) {
-            ClassDescriptorFromJvmBytecode samInterface = bindingContext.get(
-                    JavaBindingContext.SAM_CONSTRUCTOR_TO_INTERFACE, ((SimpleFunctionDescriptor) funDescriptor).getOriginal());
-
-            if (samInterface != null) {
-                return invokeSamConstructor(expression, resolvedCall, samInterface);
-            }
+        if (funDescriptor instanceof SamConstructorDescriptor) {
+            return invokeSamConstructor(expression, resolvedCall, ((SamConstructorDescriptor) funDescriptor).getSamInterface());
         }
 
         return invokeFunction(call, receiver, resolvedCall);
