@@ -58,12 +58,6 @@ public class JetProperty extends JetTypeParameterListOwnerStub<PsiJetPropertyStu
         return visitor.visitProperty(this, data);
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.PROPERTY;
-    }
-
     @Override
     public boolean isVar() {
         PsiJetPropertyStub stub = getStub();

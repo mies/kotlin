@@ -41,12 +41,6 @@ public class JetObjectDeclaration extends JetFqNamedDeclarationStub<PsiJetObject
         super(stub, JetStubElementTypes.OBJECT_DECLARATION);
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.OBJECT_DECLARATION;
-    }
-
     @Override
     public String getName() {
         PsiJetObjectStub stub = getStub();

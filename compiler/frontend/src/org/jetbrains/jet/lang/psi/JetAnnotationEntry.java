@@ -32,12 +32,6 @@ public class JetAnnotationEntry extends JetElementImplStub<PsiJetAnnotationStub>
         super(node);
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.ANNOTATION_ENTRY;
-    }
-
     public JetAnnotationEntry(@NotNull PsiJetAnnotationStub stub) {
         super(stub, JetStubElementTypes.ANNOTATION_ENTRY);
     }

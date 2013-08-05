@@ -80,12 +80,6 @@ public class JetNamedFunction extends JetTypeParameterListOwnerStub<PsiJetFuncti
         return PsiTreeUtil.getNextSiblingOfType(getEqualsToken(), JetExpression.class);
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.FUNCTION;
-    }
-    
     @Override
     public ItemPresentation getPresentation() {
         return ItemPresentationProviders.getItemPresentation(this);

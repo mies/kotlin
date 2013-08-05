@@ -47,12 +47,6 @@ public class JetParameter extends JetFqNamedDeclarationStub<PsiJetParameterStub>
         super(stub, nodeType);
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.VALUE_PARAMETER;
-    }
-
     @Override
     public void accept(@NotNull JetVisitorVoid visitor) {
         visitor.visitParameter(this);

@@ -55,12 +55,6 @@ public class JetEnumEntry extends JetClass {
         return nameAsDeclaration == null ? null : nameAsDeclaration.getNameIdentifier();
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.ENUM_ENTRY;
-    }
-
     @Override
     public PsiElement setName(@NonNls @NotNull String name) throws IncorrectOperationException {
         JetObjectDeclarationName nameAsDeclaration = getNameAsDeclaration();

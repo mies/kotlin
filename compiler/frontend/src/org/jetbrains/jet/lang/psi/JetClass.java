@@ -170,12 +170,6 @@ public class JetClass extends JetTypeParameterListOwnerStub<PsiJetClassStub> imp
         return hasModifier(JetTokens.INNER_KEYWORD);
     }
 
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.CLASS;
-    }
-
     @Override
     public void delete() throws IncorrectOperationException {
         JetPsiUtil.deleteClass(this);

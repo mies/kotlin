@@ -76,10 +76,4 @@ public class JetTypeParameter extends JetNamedDeclarationStub<PsiJetTypeParamete
     public JetTypeReference getExtendsBound() {
         return (JetTypeReference) findChildByType(JetNodeTypes.TYPE_REFERENCE);
     }
-
-    @NotNull
-    @Override
-    public IStubElementType getElementType() {
-        return JetStubElementTypes.TYPE_PARAMETER;
-    }
 }
