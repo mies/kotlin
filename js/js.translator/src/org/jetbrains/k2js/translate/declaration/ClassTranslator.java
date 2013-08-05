@@ -133,32 +133,29 @@ public final class ClassTranslator extends AbstractTranslator {
     private void addClassOwnDeclarations(@NotNull JsInvocation jsClassDeclaration, @NotNull final TranslationContext declarationContext) {
         final List<JsPropertyInitializer> properties = new SmartList<JsPropertyInitializer>();
 
-        final List<JsPropertyInitializer> staticProperties;
+        final List<JsPropertyInitializer> staticProperties = new SmartList<JsPropertyInitializer>();
         boolean isTopLevelDeclaration = context() == declarationContext;
-        if (!isTopLevelDeclaration) {
-            staticProperties = null;
-        }
-        else if (descriptor.getKind().isObject()) {
-            staticProperties = null;
-            declarationContext.literalFunctionTranslator()
-                    .setDefinitionPlace(new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
-                        @Override
-                        @NotNull
-                        public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
-                            return createPlace(properties, context().getThisObject(descriptor));
-                        }
-                    });
-        }
-        else {
-            staticProperties = new SmartList<JsPropertyInitializer>();
-            declarationContext.literalFunctionTranslator()
-                    .setDefinitionPlace(new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
-                        @Override
-                        @NotNull
-                        public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
-                            return createPlace(staticProperties, getQualifiedReference(declarationContext, descriptor));
-                        }
-                    });
+        if (isTopLevelDeclaration) {
+            if (descriptor.getKind().isObject()) {
+                declarationContext.literalFunctionTranslator()
+                        .setDefinitionPlace(new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                            @Override
+                            @NotNull
+                            public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                                return createPlace(properties, context().getThisObject(descriptor));
+                            }
+                        });
+            }
+            else {
+                declarationContext.literalFunctionTranslator()
+                        .setDefinitionPlace(new NotNullLazyValue<Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression>>() {
+                            @Override
+                            @NotNull
+                            public Trinity<List<JsPropertyInitializer>, LabelGenerator, JsExpression> compute() {
+                                return createPlace(staticProperties, getQualifiedReference(declarationContext, descriptor));
+                            }
+                        });
+            }
         }
 
         if (!isTrait()) {
@@ -172,13 +169,13 @@ public final class ClassTranslator extends AbstractTranslator {
         }
 
         translatePropertiesAsConstructorParameters(declarationContext, properties);
-        new DeclarationBodyVisitor(properties).traverseContainer(classDeclaration, declarationContext);
+        new DeclarationBodyVisitor(properties, staticProperties).traverseContainer(classDeclaration, declarationContext);
 
         if (isTopLevelDeclaration) {
             declarationContext.literalFunctionTranslator().setDefinitionPlace(null);
         }
 
-        boolean hasStaticProperties = staticProperties != null && !staticProperties.isEmpty();
+        boolean hasStaticProperties = !staticProperties.isEmpty();
         if (!properties.isEmpty() || hasStaticProperties) {
             jsClassDeclaration.getArguments().add(properties.isEmpty() ? JsLiteral.NULL : new JsObjectLiteral(properties, true));
         }
