@@ -18,6 +18,8 @@ package org.jetbrains.jet.lang.psi;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.stubs.IStubElementType;
+import com.intellij.psi.stubs.StubElement;
 import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.jetbrains.annotations.NotNull;
@@ -27,9 +29,13 @@ import org.jetbrains.jet.lexer.JetTokens;
 
 import java.util.List;
 
-public class JetClassBody extends JetElementImpl implements JetDeclarationContainer {
+public class JetClassBody extends JetElementImplStub<StubElement> implements JetDeclarationContainer {
     public JetClassBody(@NotNull ASTNode node) {
         super(node);
+    }
+
+    public JetClassBody(@NotNull StubElement stub, @NotNull IStubElementType nodeType) {
+        super(stub, nodeType);
     }
 
     @Override
