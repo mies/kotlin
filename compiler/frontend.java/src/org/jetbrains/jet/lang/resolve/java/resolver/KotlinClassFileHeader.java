@@ -73,6 +73,10 @@ public final class KotlinClassFileHeader {
         return type;
     }
 
+    public boolean isKotlinCompiledFile() {
+        return type != HeaderType.NONE;
+    }
+
     @NotNull
     public JvmClassName getJvmClassName() {
         assert jvmClassName != null;
@@ -90,19 +94,15 @@ public final class KotlinClassFileHeader {
         }
     }
 
-    @Nullable
+    @NotNull
     public ClassData readClassData() {
-        if (type != HeaderType.CLASS) {
-            return null;
-        }
+        assert type == HeaderType.CLASS;
         return JavaProtoBufUtil.readClassDataFrom(getAnnotationData());
     }
 
-    @Nullable
+    @NotNull
     public PackageData readPackageData() {
-        if (type != HeaderType.PACKAGE) {
-            return null;
-        }
+        assert type == HeaderType.PACKAGE;
         return JavaProtoBufUtil.readPackageDataFrom(getAnnotationData());
     }
 
