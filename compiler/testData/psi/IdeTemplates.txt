@@ -100,7 +100,7 @@ JetFile: IdeTemplates.jet
         PsiElement(for)('for')
         PsiWhiteSpace(' ')
         PsiElement(LPAR)('(')
-        LOOP_PARAMETER
+        VALUE_PARAMETER
           IDE_TEMPLATE_EXPRESSION
             PsiElement(IDE_TEMPLATE_START)('<#<')
             PsiElement(IDENTIFIER)('i')

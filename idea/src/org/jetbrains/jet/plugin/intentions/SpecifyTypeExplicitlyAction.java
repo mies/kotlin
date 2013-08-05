@@ -122,7 +122,7 @@ public class SpecifyTypeExplicitlyAction extends PsiElementBaseIntentionAction {
                  && !((JetNamedFunction) declaration).hasBlockBody()) {
             setText(JetBundle.message("specify.type.explicitly.add.return.type.action.name"));
         }
-        else if (declaration instanceof JetParameter && JetNodeTypes.LOOP_PARAMETER == declaration.getNode().getElementType()) {
+        else if (declaration instanceof JetParameter && declaration.getParent() instanceof JetForExpression) {
             if (((JetParameter) declaration).getTypeReference() != null) {
                 setText(JetBundle.message("specify.type.explicitly.remove.action.name"));
                 return true;
