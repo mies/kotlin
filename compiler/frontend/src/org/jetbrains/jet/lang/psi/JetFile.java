@@ -53,10 +53,6 @@ public class JetFile extends PsiFileBase implements JetDeclarationContainer, Jet
 
     @Override
     public FileASTNode getNode() {
-        //TODO:
-        if (isCompiled) {
-            throw new IllegalStateException("Should not call such nasty methods!");
-        }
         return super.getNode();
     }
 
