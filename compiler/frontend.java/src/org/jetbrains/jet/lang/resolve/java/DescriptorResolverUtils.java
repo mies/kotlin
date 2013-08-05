@@ -42,6 +42,7 @@ public final class DescriptorResolverUtils {
     private DescriptorResolverUtils() {
     }
 
+    //TODO: these utilities should go away as soon as JavaPsiClassFinder finds only java classes
     public static boolean isCompiledKotlinPackageClass(@NotNull PsiClass psiClass) {
         if (psiClass instanceof ClsClassImpl) {
             String qualifiedName = psiClass.getQualifiedName();
