@@ -213,8 +213,8 @@ public final class JavaConstructorResolver {
         );
 
         ExternalSignatureResolver.MethodSignature effectiveSignature = externalSignatureResolver
-                .resolveAlternativeSignature(constructor, false, null, null, valueParameters,
-                                             Collections.<TypeParameterDescriptor>emptyList());
+                .resolveAlternativeMethodSignature(constructor, false, null, null, valueParameters,
+                                                   Collections.<TypeParameterDescriptor>emptyList());
 
         constructorDescriptor
                 .initialize(typeParameters, effectiveSignature.getValueParameters(), constructor.getVisibility(), isStaticClass);

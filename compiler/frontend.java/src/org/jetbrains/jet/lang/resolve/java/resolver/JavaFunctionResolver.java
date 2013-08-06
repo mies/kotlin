@@ -145,7 +145,7 @@ public final class JavaFunctionResolver {
             superFunctions = Collections.emptyList();
             signatureErrors = Collections.emptyList();
             effectiveSignature = externalSignatureResolver
-                    .resolveAlternativeSignature(method, false, returnType, null, valueParameters, methodTypeParameters);
+                    .resolveAlternativeMethodSignature(method, false, returnType, null, valueParameters, methodTypeParameters);
         }
         else if (ownerDescriptor instanceof ClassDescriptor) {
             SignaturesPropagationData propagated = externalSignatureResolver
@@ -155,9 +155,9 @@ public final class JavaFunctionResolver {
             superFunctions = propagated.getSuperFunctions();
 
             effectiveSignature = externalSignatureResolver
-                    .resolveAlternativeSignature(method, !superFunctions.isEmpty(), propagated.getModifiedReturnType(),
-                                                 propagated.getModifiedReceiverType(), propagated.getModifiedValueParameters(),
-                                                 propagated.getModifiedTypeParameters());
+                    .resolveAlternativeMethodSignature(method, !superFunctions.isEmpty(), propagated.getModifiedReturnType(),
+                                                       propagated.getModifiedReceiverType(), propagated.getModifiedValueParameters(),
+                                                       propagated.getModifiedTypeParameters());
 
             signatureErrors = new ArrayList<String>(propagated.getSignatureErrors());
             signatureErrors.addAll(effectiveSignature.getErrors());
