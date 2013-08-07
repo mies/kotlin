@@ -12,5 +12,5 @@ build:
     -  script:
         name: maven build
         code: |
-          mvn package
+          (cd libaries; mvn package)
       
