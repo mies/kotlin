@@ -1,0 +1,16 @@
+box: mies/scala
+build:
+  steps:
+    -  script:
+        name: ant dependencies
+        code: |
+          ant -f update_dependencies.xml
+    -  script:
+        name: ant build
+        code: |
+          ant -f build.xml
+    -  script:
+        name: maven build
+        code: |
+          mvn package
+      
